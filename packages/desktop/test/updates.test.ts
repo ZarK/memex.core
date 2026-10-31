@@ -369,7 +369,8 @@ function githubServer(releases: FakeRelease[]): Promise<{ server: Server; host: 
       const version = release.tag.replace(/^v/, "");
       const installerName = `Memex.Example-${version}-windows-x64.exe`;
       const channel = /-([a-z]+)/.exec(version)?.[1] ?? "latest";
-      if (match[2] === `${channel}.yml`) {
+      // electron-updater asks for latest.yml on Windows and latest-linux.yml on Linux: the test serves the same file for both.
+      if (match[2] === `${channel}.yml` || match[2] === `${channel}-linux.yml`) {
         const sha512 = release.badDigest ? digest512(Buffer.from("other")) : digest512(release.installer);
         response.setHeader("content-type", "text/yaml");
         response.end(`version: ${version}\nfiles:\n  - url: ${installerName}\n    sha512: ${sha512}\n    size: ${release.installer.length}\npath: ${installerName}\nsha512: ${sha512}\nreleaseDate: '2026-12-15T09:00:00.000Z'\n`);
