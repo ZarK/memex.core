@@ -9,7 +9,7 @@ name: Memex CI
 # the SHA from job.workflow_sha, so one pin moves the workflow and its tools together.
 #
 # On pull requests everything runs on Linux. On main (and by hand) a public repository also runs on Windows and
-# macOS; a private repository runs on Linux only, to keep within the Actions minutes of GitHub Free.
+# macOS; a private repository runs on Linux only, to keep within the Actions minutes of the plan.
 
 on:
   workflow_call:
