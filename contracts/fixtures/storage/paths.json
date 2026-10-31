@@ -414,6 +414,66 @@
         "locations": { "format": "memex.locations/1", "apps": {}, "packs": "packs" }
       },
       "error": "relative-path"
+    },
+    {
+      "name": "windows: MEMEX_LOCAL_ROOT moves cache, logs and state, and nothing else",
+      "input": { "app": "contacts", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_HOME": "D:\\Run\\home", "MEMEX_LOCAL_ROOT": "D:\\Run\\local" } },
+      "expected": {
+        "data": "D:\\Run\\home\\Contacts",
+        "cache": "D:\\Run\\local\\Contacts\\Cache",
+        "logs": "D:\\Run\\local\\Contacts\\Logs",
+        "state": "D:\\Run\\local\\Contacts\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "D:\\Run\\home\\Archive"
+      }
+    },
+    {
+      "name": "linux: MEMEX_LOCAL_ROOT beats the XDG folders and uses the folder name",
+      "input": { "app": "codesessions", "platform": "linux", "home": "/home/ada", "env": { "XDG_STATE_HOME": "/xdg/state", "XDG_CACHE_HOME": "/xdg/cache", "MEMEX_LOCAL_ROOT": "/tmp/run/local/" } },
+      "expected": {
+        "data": "/home/ada/Memex/CodeSessions",
+        "cache": "/tmp/run/local/CodeSessions/Cache",
+        "logs": "/tmp/run/local/CodeSessions/Logs",
+        "state": "/tmp/run/local/CodeSessions/State",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "macOS: a folder chosen in locations.json for the cache comes before MEMEX_LOCAL_ROOT",
+      "input": {
+        "app": "photos", "platform": "darwin", "home": "/Users/ada", "env": { "MEMEX_LOCAL_ROOT": "/tmp/run/local" },
+        "locations": { "format": "memex.locations/1", "apps": { "photos": { "cache": "/mnt/fast/photos" } } }
+      },
+      "expected": {
+        "data": "/Users/ada/Memex/Photos",
+        "cache": "/mnt/fast/photos",
+        "logs": "/tmp/run/local/Photos/Logs",
+        "state": "/tmp/run/local/Photos/State",
+        "packs": "/Users/ada/Library/Application Support/Memex/Packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/Users/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "an empty MEMEX_LOCAL_ROOT counts as unset",
+      "input": { "app": "finance", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_LOCAL_ROOT": "" } },
+      "expected": {
+        "data": "/home/ada/Memex/Finance",
+        "cache": "/home/ada/.cache/memex/finance",
+        "logs": "/home/ada/.local/state/memex/finance/logs",
+        "state": "/home/ada/.local/state/memex/finance/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "relative MEMEX_LOCAL_ROOT",
+      "input": { "app": "photos", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_LOCAL_ROOT": "local" } },
+      "error": "relative-path"
     }
   ]
 }

@@ -76,6 +76,8 @@ export function archiveCacheDir(ctx: ArchiveContext = {}): string {
   const { p, platform, env, home } = resolveContext(ctx);
   const h = absolute(p, "home", home);
   if (h === undefined) throw new ArchivePathError("The home folder is not set");
+  const localRoot = absolute(p, "MEMEX_LOCAL_ROOT", env.MEMEX_LOCAL_ROOT);
+  if (localRoot !== undefined) return p.join(localRoot, "Archive", "Cache");
   if (platform === "win32") {
     const local = lenient(p, env.LOCALAPPDATA) ?? p.join(h, "AppData", "Local");
     return p.join(local, "Memex", "Archive", "Cache");

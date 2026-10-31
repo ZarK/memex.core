@@ -99,6 +99,8 @@ describe("archive root", () => {
       { platform: "win32", home: "C:\\Users\\ada", env: { LOCALAPPDATA: "D:\\Local" } },
       { platform: "darwin", home: "/Users/ada", env: {} },
       { platform: "linux", home: "/home/ada", env: { XDG_CACHE_HOME: "/var/cache/ada" } },
+      { platform: "win32", home: "C:\\Users\\ada", env: { MEMEX_HOME: "D:\\Run\\home", MEMEX_LOCAL_ROOT: "D:\\Run\\local" } },
+      { platform: "linux", home: "/home/ada", env: { XDG_CACHE_HOME: "/var/cache/ada", MEMEX_LOCAL_ROOT: "/tmp/run/local" } },
     ];
     for (const c of envs) {
       expect(archiveCacheDir(c)).toBe(memexPaths({ app: "archive", ...c }).cache);
