@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@tjalve/memex-facts": "workspace:*",
-    "@types/node": "24.13.3",
+    "@types/node": "24.19.2",
     "typescript": "5.9.2",
     "vitest": "4.1.11",
     "yaml": "2.9.1"
