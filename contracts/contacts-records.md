@@ -101,7 +101,7 @@ Claims follow [facts.md](facts.md#claims), with `subject` and, for a relation or
 
 | Scope | Producer |
 |---|---|
-| `contacts.persons`, `contacts.homes`, `contacts.workplaces`, `contacts.dates`, `contacts.identities` | Contacts, from each revision of each card |
+| `contacts.persons`, `contacts.homes`, `contacts.workplaces`, `contacts.circles`, `contacts.dates`, `contacts.identities` | Contacts, from each revision of each card. A circle comes from the categories of a card. |
 | `photos.circles` | Photos: the circles that the person confirms on "Who you're with". Suggested circles stay in Photos. |
 | `photos.relations`, `photos.dates` | Photos: what the person enters between linked persons |
 | `conversations.identities` | Conversations, later: handles seen with a person |
