@@ -18,7 +18,7 @@
     "@tjalve/memex-storage": "workspace:*",
     "@tjalve/memex-surfaces": "workspace:*",
     "@tjalve/memex-user-client": "workspace:*",
-    "zod": "4.6.6"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tjalve/memex-licenses": "workspace:*",
