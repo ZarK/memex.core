@@ -182,7 +182,14 @@ describe("update controller", () => {
     // a ready update is not downloaded twice
     expect(await t.c.checkNow()).toEqual({ status: "ready", version: "0.1.1" });
     expect(t.updater.calls).toHaveLength(1);
-    expect(t.c.installNow()).toBe(true);
+    let stopped = 0;
+    const withHook = controller("0.1.0", { beforeInstall: async () => void (stopped += 1) });
+    withHook.updater.answers = ["0.1.1"];
+    await withHook.c.checkNow();
+    expect(await withHook.c.installNow()).toBe(true);
+    expect(stopped).toBe(1);
+    expect(withHook.updater.installs).toEqual([[true, true]]);
+    expect(await t.c.installNow()).toBe(true);
     expect(t.updater.installs).toEqual([[true, true]]);
   });
 
@@ -265,7 +272,36 @@ describe("update controller", () => {
     t.c.setEnabled(false);
     open();
     expect(await running).toEqual({ status: "off" });
-    expect(t.c.installNow()).toBe(false);
+    expect(await t.c.installNow()).toBe(false);
+  });
+
+  it("checks the new channel after a check that began on the old one, and keeps a downloaded update across the switch", async () => {
+    const t = controller("1.0.0");
+    t.c.start();
+    let open!: () => void;
+    t.updater.gate = new Promise<void>((resolve) => (open = resolve));
+    t.updater.answers = [null];
+    const running = t.c.checkNow();
+    t.c.setChannel("beta");
+    expect(t.live().map((x) => x.ms)).toEqual([30_000]); // no second check yet
+    open();
+    await running;
+    await vi_flush();
+    expect(t.live().map((x) => x.ms)).toEqual([0]);
+    // a downloaded update stays when updates go off and on
+    const u = controller("1.0.0");
+    u.updater.answers = ["1.0.1"];
+    await u.c.checkNow();
+    u.c.setEnabled(false);
+    u.c.setEnabled(true);
+    expect(u.c.state).toEqual({ status: "ready", version: "1.0.1" });
+    // a release candidate is dropped when the person goes back to stable releases
+    const v = controller("1.0.0-rc.1");
+    v.updater.answers = [null, "1.0.0-rc.2"];
+    await v.c.checkNow();
+    v.c.setChannel("latest");
+    expect(v.c.state.status).toBe("idle");
+    expect(v.updater.autoInstallOnAppQuit).toBe(false);
   });
 
   it("keeps the channel and checks again at once", async () => {

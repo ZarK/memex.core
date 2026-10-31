@@ -585,7 +585,7 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
     if (!options.updates) return;
     const support = updateSupport({ platform: process.platform, env: process.env, packaged });
     if (!support.supported) {
-      log(`Updates are not available: ${support.reason}`);
+      log(`updates: not available: ${support.reason}`);
       emit({ type: "updates-unavailable", reason: support.reason ?? "" });
       return;
     }
@@ -599,6 +599,10 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
         feed,
         version: app.getVersion(),
         settingsFile: path.join(paths.state, "updates.json"),
+        beforeInstall: async () => {
+          const running = server;
+          if (running && !running.exited) await running.stop();
+        },
         log: (line) => log(`updates: ${line}`),
         onState: (state, settings) => {
           emit({ type: "update-state", state, settings });

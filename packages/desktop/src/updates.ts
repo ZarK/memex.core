@@ -137,6 +137,8 @@ export interface UpdateControllerOptions {
   setTimer?: (callback: () => void, ms: number) => unknown;
   clearTimer?: (timer: unknown) => void;
   now?: () => Date;
+  /** Runs before the installer starts for "Restart to Update": the shell stops its server here, so that no program of the app still runs. */
+  beforeInstall?: () => Promise<void>;
 }
 
 /**
@@ -152,6 +154,8 @@ export class UpdateController {
   private timer: unknown = null;
   private running: Promise<UpdateState> | null = null;
   private started = false;
+  private readyVersion: string | null = null;
+  private rerun = false;
 
   constructor(options: UpdateControllerOptions) {
     this.options = { ...options, feed: parseUpdateFeed(options.feed) };
@@ -199,7 +203,7 @@ export class UpdateController {
       this.timer = null;
       this.setState({ status: "off" });
     } else {
-      this.setState({ status: "idle" });
+      this.setState(this.readyVersion ? { status: "ready", version: this.readyVersion } : { status: "idle" });
       if (this.started) this.schedule(0);
     }
   }
@@ -209,8 +213,17 @@ export class UpdateController {
     this.current = { ...this.current, channel };
     this.save();
     this.log(`The update channel is ${channel}.`);
+    // A release candidate that is downloaded does not stay for a person who went back to stable releases.
+    if (channel === "latest" && this.readyVersion !== null && channelOfVersion(this.readyVersion) === "beta") {
+      this.readyVersion = null;
+      this.options.updater.autoInstallOnAppQuit = false;
+      if (this.currentState.status === "ready") this.setState({ status: "idle" });
+    }
     this.options.onState?.(this.currentState, this.settings);
-    if (this.current.enabled && this.started) this.schedule(0);
+    if (!this.current.enabled || !this.started) return;
+    // A check that runs now looks at the old channel: run another one when it ends.
+    if (this.running) this.rerun = true;
+    else this.schedule(0);
   }
 
   /** One check now. Does nothing while updates are off. Returns the state that it ends in. */
@@ -220,14 +233,20 @@ export class UpdateController {
     if (this.currentState.status === "ready") return Promise.resolve(this.currentState);
     this.running = this.check().finally(() => {
       this.running = null;
+      if (this.rerun) {
+        this.rerun = false;
+        if (this.started && this.current.enabled) this.schedule(0);
+      }
     });
     return this.running;
   }
 
   /** Quits the app, runs the installer of a downloaded update and starts the app again. */
-  installNow(): boolean {
+  async installNow(): Promise<boolean> {
     if (this.currentState.status !== "ready" || !this.current.enabled) return false;
     this.log(`Restarting to install update ${this.currentState.version}.`);
+    // The installer replaces the app's files: nothing of the app may still run when it starts.
+    await this.options.beforeInstall?.();
     this.options.updater.quitAndInstall(true, true);
     return true;
   }
@@ -254,9 +273,11 @@ export class UpdateController {
           const version = result.updateInfo.version;
           this.log(`Update ${version} found${allowPrerelease ? " (release candidate)" : ""}; downloading.`);
           this.setState({ status: "downloading", version });
+          updater.autoInstallOnAppQuit = true;
           await updater.downloadUpdate();
           if (!this.current.enabled) return this.currentState;
           this.log(`Update ${version} is downloaded; it installs when the app quits.`);
+          this.readyVersion = version;
           return this.setState({ status: "ready", version });
         }
       }
@@ -277,7 +298,7 @@ export class UpdateController {
       this.timer = null;
       if (!this.started || !this.current.enabled) return;
       void this.checkNow().finally(() => {
-        if (this.started && this.current.enabled) this.schedule(this.options.intervalMs ?? UPDATE_INTERVAL_MS);
+        if (this.started && this.current.enabled && this.timer === null) this.schedule(this.options.intervalMs ?? UPDATE_INTERVAL_MS);
       });
     }, ms);
     (this.timer as { unref?: () => void } | null)?.unref?.();
