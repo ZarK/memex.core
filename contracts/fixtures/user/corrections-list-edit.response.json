@@ -1,0 +1,30 @@
+{
+  "changeId": "chg_4b7e2a9c1d0f4e3a8b6c5d2e1f0a9b8c",
+  "summary": "1 correction stored and applied: participants of trip Lisbon with Sam edited.",
+  "corrections": [
+    {
+      "id": "cor_01d3b9f27a6c4e58b0a1c2d3e4f5a6b7",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": {
+        "participants": {
+          "add": [{ "app": "contacts", "kind": "person", "id": "ct_kim" }],
+          "remove": [{ "app": "contacts", "kind": "person", "id": "ct_sam" }]
+        }
+      },
+      "app": "photos",
+      "createdAt": "2026-11-21T09:15:00Z",
+      "anchors": [{ "scope": "photos.trips", "key": "trip-1842" }]
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_01d3b9f27a6c4e58b0a1c2d3e4f5a6b7",
+      "status": "applied",
+      "repeat": false,
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "version": 5,
+      "state": "active"
+    }
+  ]
+}

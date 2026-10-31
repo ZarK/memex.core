@@ -1,0 +1,42 @@
+{
+  "changeId": "chg_a00f655305a82cb220ffed07b58b2c64",
+  "summary": "Jon Example (Google) is a person of its own again. 1 correction held: the person is not merged.",
+  "corrections": [
+    {
+      "id": "cor_ee94fd822d6b0fe8d2c0a3a5b5bd6b63",
+      "op": "unmerge",
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "app": "contacts",
+      "createdAt": "2026-11-22T08:00:00Z"
+    },
+    {
+      "id": "cor_c8b61b986dda8ce37e926d8456731207",
+      "op": "unmerge",
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "app": "contacts",
+      "createdAt": "2026-11-22T08:00:05Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_ee94fd822d6b0fe8d2c0a3a5b5bd6b63",
+      "status": "applied",
+      "repeat": false,
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "version": 3,
+      "state": "active"
+    },
+    {
+      "id": "cor_c8b61b986dda8ce37e926d8456731207",
+      "status": "held",
+      "repeat": false,
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "version": 3,
+      "state": "active",
+      "reason": {
+        "code": "not-merged",
+        "message": "Jon Example (Google) is not merged into another person."
+      }
+    }
+  ]
+}

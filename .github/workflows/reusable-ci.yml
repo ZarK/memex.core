@@ -1,0 +1,430 @@
+name: Memex CI
+
+# The CI of every Memex repository. A repository calls it from its own ci.yml, pinned by the full
+# commit SHA of memex.core:
+#
+#   uses: ZarK/memex.core/.github/workflows/reusable-ci.yml@<40-character SHA>
+#
+# The tools (memex-licenses, memex-surfaces) come from memex.core at that same commit: the jobs read
+# the SHA from job.workflow_sha, so one pin moves the workflow and its tools together.
+#
+# On pull requests everything runs on Linux. On main (and by hand) a public repository also runs on Windows and
+# macOS; a private repository runs on Linux only, to keep within the Actions minutes of GitHub Free.
+
+on:
+  workflow_call:
+    inputs:
+      license:
+        description: "The repository's own license by its group (MIT for libraries, AGPL for apps, GPL for ComfyUI nodes): MIT, AGPL-3.0-or-later or GPL-3.0-or-later"
+        type: string
+        required: true
+      license-pending:
+        description: Why the license is still open and what settles it; a mismatch is then a note
+        type: string
+        default: ""
+      stack:
+        description: "pnpm, npm, dotnet or python"
+        type: string
+        required: true
+      node-versions:
+        description: Node versions as a JSON list (pnpm and npm)
+        type: string
+        default: '["24"]'
+      python-version:
+        type: string
+        default: "3.12"
+      setup:
+        description: Commands that install what the tests need beyond the lockfile (run after the install)
+        type: string
+        default: ""
+      linux-packages:
+        description: Ubuntu (or, in linux-container, Debian) packages the Linux jobs install, separated by spaces
+        type: string
+        default: ""
+      linux-container:
+        description: A container image, pinned by digest, that the Linux build and test job runs in, for tools newer than Ubuntu has
+        type: string
+        default: ""
+      typecheck:
+        type: string
+        default: ""
+      test:
+        type: string
+        default: ""
+      build:
+        type: string
+        default: ""
+      licenses-args:
+        description: Extra arguments for memex-licenses check
+        type: string
+        default: ""
+      licenses-electron:
+        description: The folder of the app that depends on electron; its release zip is fetched (checked by SHA-256) for the Chromium credits
+        type: string
+        default: ""
+      surfaces-app:
+        description: The app id that memex-surfaces check checks; empty for a repository without an app
+        type: string
+        default: ""
+      surfaces-start:
+        description: The command that starts the app (it runs in the background with scratch folders)
+        type: string
+        default: ""
+      surfaces-pending:
+        description: What still has to happen before the app meets the surfaces contract; the check then reports but does not fail
+        type: string
+        default: ""
+      surfaces-cli:
+        description: "The app's CLI as <name>=<JavaScript entry>, put on PATH for the check, for example memex-contacts=dist/bin.js"
+        type: string
+        default: ""
+      keyring-test:
+        description: Commands that use the Linux Secret Service, run in a D-Bus session with an unlocked gnome-keyring
+        type: string
+        default: ""
+
+permissions: {}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  checks:
+    name: Secrets and license
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+      - name: Check out (full history, for the commit range)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          # The commit of this workflow file: the full SHA that the calling workflow pins.
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/memex-core"
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            sha=$(git rev-parse HEAD)
+            git clone --quiet --no-checkout "$GITHUB_WORKSPACE" "$core"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            if ! printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$'; then
+              echo "::error::Call the memex.core reusable workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."
+              exit 1
+            fi
+            git init --quiet "$core"
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+          fi
+          git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+          echo "Memex tools from memex.core $sha"
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          bash "$core/scripts/ci/tools.sh"
+      - name: gitleaks 8.30.1 (checked by SHA-256)
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/gitleaks"
+          mkdir -p "$dir"
+          curl -fsSL -o "$dir/gitleaks.tar.gz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $dir/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$dir/gitleaks.tar.gz" -C "$dir" gitleaks
+          echo "$dir" >> "$GITHUB_PATH"
+      - name: The commits to check
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = pull_request ]; then
+            range="$BASE..$HEAD"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] && git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
+            range="$BEFORE..$GITHUB_SHA"
+          else
+            range="$GITHUB_SHA"
+          fi
+          echo "Range: $range ($(git rev-list --count "$range") commits)"
+          echo "RANGE=$range" >> "$GITHUB_ENV"
+      - name: gitleaks on the commits
+        run: gitleaks git --no-banner --redact --log-opts="$RANGE" .
+      - name: The repository's own license
+        env:
+          LICENSE_ID: ${{ inputs.license }}
+          PENDING: ${{ inputs.license-pending }}
+        run: node "$MEMEX_CORE/packages/licenses/dist/bin.js" own --repo . --expect "$LICENSE_ID" --pending "$PENDING"
+
+  test:
+    name: Build and test (${{ inputs.stack }}${{ (inputs.stack == 'pnpm' || inputs.stack == 'npm') && format(', Node {0}', matrix.node) || '' }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # An empty container runs the job on the runner itself.
+    container: ${{ matrix.os == 'ubuntu-24.04' && inputs.linux-container || '' }}
+    permissions:
+      contents: read
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON((github.event_name != 'pull_request' && github.event.repository.private == false) && '["ubuntu-24.04", "windows-2025", "macos-15"]' || '["ubuntu-24.04"]') }}
+        node: ${{ fromJSON((inputs.stack == 'pnpm' || inputs.stack == 'npm') && inputs.node-versions || '["24"]') }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Container basics (git, curl, certificates)
+        if: matrix.os == 'ubuntu-24.04' && inputs.linux-container != ''
+        run: apt-get update -q && apt-get install -y -q --no-install-recommends git ca-certificates curl unzip xz-utils
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scratch folders (never a real data folder)
+        run: |
+          set -euo pipefail
+          s="$RUNNER_TEMP/scratch"
+          mkdir -p "$s"
+          for v in MEMEX_HOME MEMEX_ARCHIVE_HOME MEMEX_APPS_DIR MEMEX_PHOTOS_LIBRARY MEMEX_PACKS_DIR; do
+            echo "$v=$s/$v" >> "$GITHUB_ENV"
+          done
+      - name: Ubuntu packages
+        if: runner.os == 'Linux' && inputs.linux-packages != ''
+        env:
+          PACKAGES: ${{ inputs.linux-packages }}
+        run: |
+          sudo=$(command -v sudo || true)
+          $sudo apt-get update -q && $sudo apt-get install -y -q --no-install-recommends $PACKAGES
+      - name: Set up pnpm (the version in package.json)
+        if: inputs.stack == 'pnpm'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      # The SDK's own packages (such as ILLink) are in the NuGet lock files, so CI uses exactly the SDK version that
+      # global.json names, even when global.json lets a workstation roll forward to a newer one.
+      - name: The .NET SDK version of global.json
+        if: inputs.stack == 'dotnet'
+        run: echo "DOTNET_SDK_VERSION=$(node -p 'require("./global.json").sdk.version')" >> "$GITHUB_ENV"
+      - name: Set up .NET (exactly the SDK version in global.json)
+        if: inputs.stack == 'dotnet'
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        env:
+          # A folder of its own, so the SDKs of the runner image cannot roll forward past it.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }}
+        if: inputs.stack == 'python'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Install (frozen lockfile, no install scripts)
+        if: inputs.stack == 'pnpm'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install (npm ci, no install scripts)
+        if: inputs.stack == 'npm'
+        run: npm ci --ignore-scripts
+      - name: Restore (.NET)
+        if: inputs.stack == 'dotnet'
+        # The packages.lock.json files are the lockfile: a restore that does not match them fails.
+        run: |
+          set -euo pipefail
+          used=$(dotnet --version)
+          echo ".NET SDK $used (global.json: $DOTNET_SDK_VERSION)"
+          if [ "$used" != "$DOTNET_SDK_VERSION" ]; then
+            echo "::error::The .NET SDK in use is $used, not $DOTNET_SDK_VERSION from global.json."
+            exit 1
+          fi
+          dotnet restore --locked-mode
+      - name: Set up the tests
+        if: inputs.setup != ''
+        env:
+          COMMANDS: ${{ inputs.setup }}
+        run: eval "$COMMANDS"
+      - name: Build
+        if: inputs.build != ''
+        env:
+          COMMANDS: ${{ inputs.build }}
+        run: eval "$COMMANDS"
+      - name: Typecheck
+        if: inputs.typecheck != ''
+        env:
+          COMMANDS: ${{ inputs.typecheck }}
+        run: eval "$COMMANDS"
+      - name: Test
+        if: inputs.test != ''
+        env:
+          COMMANDS: ${{ inputs.test }}
+        run: eval "$COMMANDS"
+      - name: Memex tools (memex.core at the pinned commit)
+        if: strategy.job-index == 0
+        env:
+          # The commit of this workflow file: the full SHA that the calling workflow pins.
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/memex-core"
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            sha=$(git rev-parse HEAD)
+            git clone --quiet --no-checkout "$GITHUB_WORKSPACE" "$core"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            if ! printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$'; then
+              echo "::error::Call the memex.core reusable workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."
+              exit 1
+            fi
+            git init --quiet "$core"
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+          fi
+          git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+          echo "Memex tools from memex.core $sha"
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          bash "$core/scripts/ci/tools.sh"
+      - name: memex-licenses check (the dependencies of the product)
+        if: strategy.job-index == 0
+        env:
+          ARGS: ${{ inputs.licenses-args }}
+          ELECTRON_APP: ${{ inputs.licenses-electron }}
+        # The arguments are split at spaces on purpose: they are options such as --importer <path>.
+        run: |
+          set -euo pipefail
+          electron=()
+          if [ -n "$ELECTRON_APP" ]; then
+            (cd "$ELECTRON_APP" && node "$MEMEX_CORE/packages/desktop/dist/bin.js" fetch-electron)
+            electron=(--electron-dist "$ELECTRON_APP/node_modules/electron/dist")
+          fi
+          node "$MEMEX_CORE/packages/licenses/dist/bin.js" check --repo . $ARGS "${electron[@]}"
+
+  surfaces:
+    name: memex-surfaces check
+    if: inputs.surfaces-app != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pnpm (the version in package.json)
+        if: inputs.stack == 'pnpm'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ fromJSON(inputs.node-versions)[0] }}
+          package-manager-cache: false
+      - name: Install (frozen lockfile, no install scripts)
+        if: inputs.stack == 'pnpm'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install (npm ci, no install scripts)
+        if: inputs.stack == 'npm'
+        run: npm ci --ignore-scripts
+      - name: Build
+        if: inputs.build != ''
+        env:
+          COMMANDS: ${{ inputs.build }}
+        run: eval "$COMMANDS"
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          # The commit of this workflow file: the full SHA that the calling workflow pins.
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/memex-core"
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            sha=$(git rev-parse HEAD)
+            git clone --quiet --no-checkout "$GITHUB_WORKSPACE" "$core"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            if ! printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$'; then
+              echo "::error::Call the memex.core reusable workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."
+              exit 1
+            fi
+            git init --quiet "$core"
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+          fi
+          git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+          echo "Memex tools from memex.core $sha"
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          bash "$core/scripts/ci/tools.sh"
+      - name: Start the app with scratch folders, and check it against the surfaces contract
+        env:
+          APP: ${{ inputs.surfaces-app }}
+          START: ${{ inputs.surfaces-start }}
+          CLI: ${{ inputs.surfaces-cli }}
+          PENDING: ${{ inputs.surfaces-pending }}
+        run: |
+          status=0
+          bash "$MEMEX_CORE/scripts/ci/surfaces-check.sh" "$APP" "$START" "$CLI" || status=$?
+          # Pending covers the contract checks only: an app that does not start (exit 3) always fails.
+          if [ "$status" -ne 0 ] && [ "$status" -ne 3 ] && [ -n "$PENDING" ]; then
+            echo "::warning::memex-surfaces check failed, pending: $PENDING"
+            status=0
+          fi
+          exit "$status"
+
+  keyring:
+    name: Linux Secret Service (gnome-keyring)
+    if: inputs.keyring-test != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: gnome-keyring, libsecret and D-Bus
+        env:
+          PACKAGES: ${{ inputs.linux-packages }}
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gnome-keyring libsecret-tools dbus dbus-user-session $PACKAGES
+      - name: Set up pnpm (the version in package.json)
+        if: inputs.stack == 'pnpm'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ fromJSON(inputs.node-versions)[0] }}
+          package-manager-cache: false
+      - name: Install (frozen lockfile, no install scripts)
+        if: inputs.stack == 'pnpm'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install (npm ci, no install scripts)
+        if: inputs.stack == 'npm'
+        run: npm ci --ignore-scripts
+      - name: Build
+        if: inputs.build != ''
+        env:
+          COMMANDS: ${{ inputs.build }}
+        run: eval "$COMMANDS"
+      - name: Use the Secret Service in a D-Bus session with an unlocked keyring
+        env:
+          COMMANDS: ${{ inputs.keyring-test }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/keyring-session.sh" <<'SESSION'
+          set -euo pipefail
+          # A new login keyring, unlocked with a password of this run only, serves the Secret Service on this bus.
+          printf '%s' "keyring-of-this-run" | gnome-keyring-daemon --unlock --components=secrets > /dev/null
+          gnome-keyring-daemon --start --components=secrets > /dev/null
+          printf '%s' "probe-value" | secret-tool store --label="CI probe" memex-ci probe
+          test "$(secret-tool lookup memex-ci probe)" = "probe-value"
+          secret-tool clear memex-ci probe
+          echo "The Secret Service answers on $DBUS_SESSION_BUS_ADDRESS"
+          eval "$COMMANDS"
+          SESSION
+          dbus-run-session -- bash "$RUNNER_TEMP/keyring-session.sh"

@@ -1,0 +1,50 @@
+{
+  "id": "workplace_563d09a1918a68a371be239f31e39dbf",
+  "kind": "workplace",
+  "version": 1,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "confidence": 0.9,
+  "review": false,
+  "fields": { "name": "Contoso", "type": "employer", "stints": [{ "title": "Geologist" }] },
+  "provenance": {
+    "name": [
+      {
+        "scope": "contacts.workplaces",
+        "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp"
+      }
+    ],
+    "type": [
+      {
+        "scope": "contacts.workplaces",
+        "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp"
+      }
+    ],
+    "stints": [
+      {
+        "scope": "contacts.workplaces",
+        "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp"
+      }
+    ],
+    "stints/0": [
+      {
+        "scope": "contacts.workplaces",
+        "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp"
+      }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "contacts.workplaces",
+      "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp",
+      "confidence": 0.9,
+      "seen": { "first": "2024-10-05T08:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [{ "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-16T10:00:00Z"
+}

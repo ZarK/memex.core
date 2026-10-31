@@ -1,0 +1,53 @@
+{
+  "name": "@tjalve/memex-user-client",
+  "version": "0.1.0",
+  "description": "Memex.User and Memex.Contacts client: the two facts hubs' APIs generated from their OpenAPI files, ensureUser, the durable outbox of corrections in the app's own SQLite database, and the change feed reader that keeps a local copy without overwriting unsent edits",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/user-client"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/user-client#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/generate.mjs --check && tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@tjalve/memex-node-client": "workspace:*",
+    "@tjalve/memex-sqlite": "workspace:*",
+    "@tjalve/memex-storage": "workspace:*",
+    "@tjalve/memex-surfaces": "workspace:*"
+  },
+  "devDependencies": {
+    "@tjalve/memex-facts": "workspace:*",
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11",
+    "yaml": "2.9.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

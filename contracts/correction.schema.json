@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/contracts/correction.schema.json",
+  "title": "Correction",
+  "description": "One line of the corrections JSON Lines export. See derived-facts.md. record is the fact id.",
+  "type": "object",
+  "required": ["id", "op", "app", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^cor_[0-9a-f]{32}$" },
+    "op": { "enum": ["set", "clear", "reject", "restore", "merge", "create"] },
+    "app": { "type": "string", "pattern": "^[a-z][a-z0-9]*$", "description": "The app in which the user acted." },
+    "record": { "$ref": "#/$defs/factId", "description": "The fact that the correction changes. For create: the new fact." },
+    "records": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/factId" },
+      "description": "merge: the first id stays."
+    },
+    "kind": { "type": "string", "pattern": "^[a-z][a-z0-9.-]*$" },
+    "fields": { "type": "object", "minProperties": 1 },
+    "names": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "createdAt": { "type": "string", "format": "date-time", "pattern": "Z$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "op": { "const": "set" } } },
+      "then": { "required": ["record", "fields"], "propertyNames": { "enum": ["id", "op", "app", "record", "fields", "createdAt"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "clear" } } },
+      "then": { "required": ["record", "names"], "propertyNames": { "enum": ["id", "op", "app", "record", "names", "createdAt"] } }
+    },
+    {
+      "if": { "properties": { "op": { "enum": ["reject", "restore"] } } },
+      "then": { "required": ["record"], "propertyNames": { "enum": ["id", "op", "app", "record", "createdAt"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "merge" } } },
+      "then": { "required": ["records"], "propertyNames": { "enum": ["id", "op", "app", "records", "createdAt"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "create" } } },
+      "then": { "required": ["record", "kind", "fields"], "propertyNames": { "enum": ["id", "op", "app", "record", "kind", "fields", "createdAt"] } }
+    }
+  ],
+  "$defs": {
+    "factId": { "type": "string", "pattern": "^[a-z][a-z0-9.-]*_[0-9a-f]{32}$" }
+  }
+}

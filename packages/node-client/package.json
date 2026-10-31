@@ -1,0 +1,53 @@
+{
+  "name": "@tjalve/memex-node-client",
+  "version": "0.1.0",
+  "description": "Memex.Node client: the Node API generated from its OpenAPI file over the pipe or socket of the app record, ensureNode (the service launcher), and ensureApp for headless Memex tools over stdio MCP",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/node-client"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/node-client#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/generate.mjs --check && tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@tjalve/memex-storage": "workspace:*",
+    "@tjalve/memex-surfaces": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11",
+    "yaml": "2.9.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

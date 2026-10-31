@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/home.json",
+  "title": "Home fields",
+  "description": "Where the owner lives or lived, over time, and who lived there with the owner.",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": { "enum": ["home", "cabin"] },
+    "label": { "$ref": "common.json#/$defs/text" },
+    "location": { "$ref": "common.json#/$defs/location" },
+    "address": { "$ref": "common.json#/$defs/text" },
+    "town": { "$ref": "common.json#/$defs/text" },
+    "country": { "$ref": "common.json#/$defs/country" },
+    "from": { "$ref": "common.json#/$defs/partialDate" },
+    "to": { "$ref": "common.json#/$defs/partialDate" },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["person"],
+        "properties": {
+          "person": { "$ref": "common.json#/$defs/personRef" },
+          "from": { "$ref": "common.json#/$defs/partialDate" },
+          "to": { "$ref": "common.json#/$defs/partialDate" },
+          "child": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "The people who lived there with the owner: the owner's person id or a Contacts reference."
+    }
+  },
+  "additionalProperties": false
+}

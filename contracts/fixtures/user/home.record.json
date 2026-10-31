@@ -1,0 +1,71 @@
+{
+  "id": "home_4ea140588150773ce3aace786aeef7f4",
+  "kind": "home",
+  "version": 3,
+  "state": "active",
+  "origin": "user",
+  "confidence": 1,
+  "review": true,
+  "reviewReasons": ["suggested-end"],
+  "fields": {
+    "type": "home",
+    "label": "Bergen flat",
+    "location": { "lat": 60.3913, "lon": 5.3221, "radiusM": 60 },
+    "town": "Bergen",
+    "country": "NO",
+    "from": "2019-08",
+    "members": [{ "person": "person_4c1029697ee358715d3a14a2add817c4", "from": "2019-08" }]
+  },
+  "provenance": {
+    "type": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "label": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "location": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "town": [
+      { "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" },
+      { "scope": "finance.homes", "key": "town:bergen:2019-07" },
+      { "scope": "contacts.homes", "key": "card_5e0c4a1b2d3f4e5a6b7c8d9e0f1a2b3c:adr:0" }
+    ],
+    "country": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "from": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "members": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }],
+    "members/0": [{ "correction": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946" }]
+  },
+  "alternatives": {
+    "from": [
+      {
+        "value": "2019-07",
+        "from": [{ "scope": "finance.homes", "key": "town:bergen:2019-07" }],
+        "reason": "coarser"
+      }
+    ],
+    "to": [
+      {
+        "value": "2023-06",
+        "from": [{ "scope": "finance.homes", "key": "town:bergen:2019-07" }],
+        "reason": "suggested-end"
+      }
+    ]
+  },
+  "corrected": ["type", "label", "location", "town", "country", "from", "members"],
+  "claims": [
+    {
+      "scope": "finance.homes",
+      "key": "town:bergen:2019-07",
+      "confidence": 0.7,
+      "seen": { "first": "2019-07-02T00:00:00Z", "last": "2023-06-28T00:00:00Z" }
+    },
+    {
+      "scope": "contacts.homes",
+      "key": "card_5e0c4a1b2d3f4e5a6b7c8d9e0f1a2b3c:adr:0",
+      "confidence": 0.9,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [
+    { "app": "photos", "kind": "home", "id": "home_9d27c1e0b4a35f68e2c17d0a4b6f8e13" },
+    { "app": "finance", "kind": "town-period", "id": "bergen-2019-07" },
+    { "app": "contacts", "kind": "card", "id": "card_5e0c4a1b2d3f4e5a6b7c8d9e0f1a2b3c" }
+  ],
+  "createdAt": "2026-11-20T17:42:10Z",
+  "updatedAt": "2026-11-22T06:10:00Z"
+}

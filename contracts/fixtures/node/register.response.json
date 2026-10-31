@@ -1,0 +1,33 @@
+{
+  "node": { "id": "nd_a41f09c2", "version": "1.0.0" },
+  "functions": [
+    {
+      "id": "photos.food-reading",
+      "app": "photos",
+      "capabilities": ["food.recognize"],
+      "lane": "background",
+      "runsIn": "node",
+      "route": { "kind": "url", "backend": "bk_3c9e", "model": "gemma-4-31b-it" },
+      "state": "ready"
+    },
+    {
+      "id": "photos.image-tools",
+      "app": "photos",
+      "capabilities": ["image.upscale", "image.denoise", "image.colorize"],
+      "lane": "interactive",
+      "runsIn": "node",
+      "route": { "kind": "auto" },
+      "state": "needs-pack",
+      "reason": "Real-ESRGAN x4 is not installed (64 MB)."
+    },
+    {
+      "id": "photos.library-analysis",
+      "app": "photos",
+      "capabilities": ["library.analyze"],
+      "lane": "background",
+      "runsIn": "app",
+      "route": { "kind": "auto" },
+      "state": "ready"
+    }
+  ]
+}

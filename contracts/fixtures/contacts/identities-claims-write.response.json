@@ -1,0 +1,22 @@
+{
+  "changeId": "chg_b9962d5e8e90212d9485c638cb748caa",
+  "summary": "2 identities added for Jon Example, one of them a shared address.",
+  "counts": {
+    "created": 2,
+    "updated": 0,
+    "unchanged": 0,
+    "withdrawn": 0,
+    "removed": 0,
+    "unresolved": 0
+  },
+  "records": [
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0",
+      "id": "identity_105ff82b9f019b502b4524759fa6c220"
+    },
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:email:0",
+      "id": "identity_4c60185d9e352e89388ff9a27eaa46dd"
+    }
+  ]
+}

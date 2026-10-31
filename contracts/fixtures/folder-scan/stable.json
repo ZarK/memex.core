@@ -1,0 +1,11 @@
+{
+  "description": "isSettling(file, nowMs, quietMs). Times are UTC milliseconds.",
+  "cases": [
+    { "name": "old file", "file": { "modifiedMs": 1700000000000, "createdMs": 1700000000000 }, "nowMs": 1800000000000, "quietMs": 10000, "settling": false },
+    { "name": "written 1 second ago", "file": { "modifiedMs": 1799999999000, "createdMs": 1700000000000 }, "nowMs": 1800000000000, "quietMs": 10000, "settling": true },
+    { "name": "written exactly quietMs ago", "file": { "modifiedMs": 1799999990000, "createdMs": null }, "nowMs": 1800000000000, "quietMs": 10000, "settling": false },
+    { "name": "copied 2 seconds ago: an old modification time, a new creation time", "file": { "modifiedMs": 1600000000000, "createdMs": 1799999998000 }, "nowMs": 1800000000000, "quietMs": 10000, "settling": true },
+    { "name": "a time in the future does not hold the file back", "file": { "modifiedMs": 1800000060000, "createdMs": null }, "nowMs": 1800000000000, "quietMs": 10000, "settling": false },
+    { "name": "a longer quiet time", "file": { "modifiedMs": 1799999950000, "createdMs": null }, "nowMs": 1800000000000, "quietMs": 60000, "settling": true }
+  ]
+}

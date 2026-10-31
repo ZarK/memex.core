@@ -1,0 +1,594 @@
+name: Memex desktop release
+
+# The release workflow of every Memex desktop app. An app repository calls it from its own release workflow on a
+# v<X.Y.Z> tag (or a release candidate tag v<X.Y.Z>-rc.<N>), pinned by the full commit SHA of memex.core:
+#
+#   uses: ZarK/memex.core/.github/workflows/desktop-release.yml@<40-character SHA>
+#
+# The tools (memex-desktop, memex-licenses) come from memex.core at that same commit: the jobs read the SHA from
+# job.workflow_sha, so one pin moves the workflow and its tools together. In memex.core itself they are the packages of
+# the commit under test.
+#
+# What it does: Linux gates (version and tag, build, typecheck, tests); installers on Windows (NSIS x64), macOS (dmg
+# arm64) and Linux (AppImage and deb x64) with the app.asar check; the per-platform SHA256SUMS; the extracted contents
+# of each build as a desktop-contents-<id> artifact; a smoke test of every installer on a clean GitHub runner; and one
+# checked SHA256SUMS.txt. A push of a v<X.Y.Z> or v<X.Y.Z>-rc.<N> tag also makes build provenance attestations when the
+# repository is public (GitHub makes them for private repositories only on Enterprise Cloud). This workflow never makes
+# a release: the app's workflow runs its own checks on the artifacts of the run, then calls
+# desktop-draft-release.yml with the outputs below. Every run keeps its installers as workflow artifacts for 7 days.
+# Nothing is signed yet: Windows builds are unsigned and macOS builds carry an ad-hoc signature until the Developer ID
+# and the Windows certificate are wired in; the release notes say how to open an unsigned app.
+#
+# The macOS build runs on a GitHub runner, or with macos-runner: self-hosted on the release Mac (runner labels
+# self-hosted, macOS, ARM64, memex-release). The self-hosted runner is used only for a push of a v<X.Y.Z> tag, never
+# for a pull request, a branch or a manual run. See docs/desktop-release.md.
+
+on:
+  workflow_call:
+    inputs:
+      app-directory:
+        description: The folder of the app's memex-desktop.config.mjs, relative to the repository root
+        type: string
+        required: true
+      artifact-base:
+        description: The installer name before -<version>, the product name with dots (for example Memex.Photos)
+        type: string
+        required: true
+      release-directory:
+        description: The electron-builder output folder, relative to app-directory
+        type: string
+        default: release
+      node-version:
+        type: string
+        default: "24.12.0"
+      build:
+        description: Commands at the repository root after the install, in every job that packs or checks
+        type: string
+        default: pnpm build
+      typecheck:
+        type: string
+        default: ""
+      test:
+        type: string
+        default: ""
+      prepare:
+        description: Commands in app-directory before packing, after Electron is fetched (for example the license check and the notices); $MEMEX_CORE is the memex.core tools folder
+        type: string
+        default: ""
+      linux-packages:
+        description: More Ubuntu packages for the Linux build, separated by spaces
+        type: string
+        default: ""
+      macos-runner:
+        description: "github, or self-hosted for the release Mac on a v<X.Y.Z> tag push"
+        type: string
+        default: github
+      smoke-timeout:
+        description: Seconds an installed app may take to show its first page
+        type: number
+        default: 180
+      smoke-expect:
+        description: Text that the first page of the installed app must show (empty for no check)
+        type: string
+        default: ""
+    outputs:
+      release:
+        description: "\"true\" for a push of a release tag, for the app's next jobs"
+        value: ${{ jobs.plan.outputs.release }}
+      tag:
+        description: The release tag, empty in a dry run
+        value: ${{ jobs.plan.outputs.tag }}
+      prerelease:
+        description: "\"true\" for a release candidate tag"
+        value: ${{ jobs.plan.outputs.prerelease }}
+      attested:
+        description: The result of the attestation job (success or skipped)
+        value: ${{ jobs.attest.result }}
+
+permissions: {}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  plan:
+    name: Plan (release or dry run)
+    runs-on: ubuntu-24.04
+    permissions: {}
+    timeout-minutes: 5
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      tag: ${{ steps.plan.outputs.tag }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+      build-matrix: ${{ steps.plan.outputs.build-matrix }}
+    steps:
+      - name: Release or dry run, and where macOS builds
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          MACOS_RUNNER: ${{ inputs.macos-runner }}
+        run: |
+          set -euo pipefail
+          release=false
+          tag=""
+          prerelease=false
+          if [ "$EVENT" = push ] && [ "$REF_TYPE" = tag ] && printf '%s' "$REF_NAME" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
+            release=true
+            tag="$REF_NAME"
+            case "$tag" in *-rc.*) prerelease=true ;; esac
+          fi
+          case "$MACOS_RUNNER" in
+            github) macos='"macos-15"' ;;
+            self-hosted)
+              # The release Mac builds only a pushed v<X.Y.Z> tag; every other run builds on a GitHub runner.
+              if [ "$release" = true ]; then macos='["self-hosted","macOS","ARM64","memex-release"]'; else macos='"macos-15"'; fi ;;
+            *) echo "::error::macos-runner must be github or self-hosted."; exit 1 ;;
+          esac
+          matrix=$(printf '{"include":[{"id":"linux","runs-on":"ubuntu-24.04"},{"id":"windows","runs-on":"windows-2025"},{"id":"macos","runs-on":%s}]}' "$macos")
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "build-matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Release: $release${tag:+ ($tag, prerelease: $prerelease)}. macOS builds on $macos."
+
+  gates:
+    name: Gates (version, build, typecheck, tests)
+    needs: plan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scratch folders (never a real data folder)
+        run: |
+          set -euo pipefail
+          s="$RUNNER_TEMP/scratch"
+          mkdir -p "$s"
+          for v in MEMEX_HOME MEMEX_ARCHIVE_HOME MEMEX_APPS_DIR MEMEX_PHOTOS_LIBRARY MEMEX_PACKS_DIR; do
+            echo "$v=$s/$v" >> "$GITHUB_ENV"
+          done
+      - name: Set up pnpm (the version in package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Install (frozen lockfile, no install scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build
+        if: inputs.build != ''
+        env:
+          COMMANDS: ${{ inputs.build }}
+        run: eval "$COMMANDS"
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            core="$GITHUB_WORKSPACE"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$' || { echo "::error::Call the memex.core workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."; exit 1; }
+            core="$RUNNER_TEMP/memex-core"
+            git init --quiet "$core"
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+            git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+            (cd "$core" && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter "@tjalve/memex-desktop..." build)
+          fi
+          test -f "$core/packages/desktop/dist/bin.js"
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          echo "Memex tools from memex.core $(git -C "$core" rev-parse HEAD)"
+      - name: Version (the package.json files agree, and match the tag of a release)
+        working-directory: ${{ inputs.app-directory }}
+        env:
+          MEMEX_RELEASE_TAG: ${{ needs.plan.outputs.tag }}
+          RELEASE: ${{ needs.plan.outputs.release }}
+        run: |
+          set -euo pipefail
+          files=$(node --input-type=module -e "import { pathToFileURL } from 'node:url'; const c = (await import(pathToFileURL('memex-desktop.config.mjs').href)).default; console.log((c.versionFiles ?? ['package.json']).join(','))")
+          if [ "$RELEASE" = true ]; then
+            node "$MEMEX_CORE/packages/desktop/dist/bin.js" version --files "$files" --require-tag
+          else
+            node "$MEMEX_CORE/packages/desktop/dist/bin.js" version --files "$files"
+          fi
+      - name: Typecheck
+        if: inputs.typecheck != ''
+        env:
+          COMMANDS: ${{ inputs.typecheck }}
+        run: eval "$COMMANDS"
+      - name: Test
+        if: inputs.test != ''
+        env:
+          COMMANDS: ${{ inputs.test }}
+        run: eval "$COMMANDS"
+
+  build:
+    name: Installers (${{ matrix.id }})
+    needs: [plan, gates]
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.build-matrix) }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: The release Mac builds only a pushed v<X.Y.Z> tag
+        if: runner.environment != 'github-hosted'
+        env:
+          RELEASE: ${{ needs.plan.outputs.release }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$RELEASE" != true ] || [ "$EVENT" != push ]; then
+            echo "::error::A self-hosted runner got a job that is not a v<X.Y.Z> tag push."
+            exit 1
+          fi
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scratch folders (never a real data folder)
+        run: |
+          set -euo pipefail
+          s="$RUNNER_TEMP/scratch"
+          mkdir -p "$s"
+          for v in MEMEX_HOME MEMEX_ARCHIVE_HOME MEMEX_APPS_DIR MEMEX_PHOTOS_LIBRARY MEMEX_PACKS_DIR; do
+            echo "$v=$s/$v" >> "$GITHUB_ENV"
+          done
+      - name: Ubuntu packages
+        if: runner.os == 'Linux' && inputs.linux-packages != ''
+        env:
+          PACKAGES: ${{ inputs.linux-packages }}
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends $PACKAGES
+      - name: Set up pnpm (the version in package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Install (frozen lockfile, no install scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build
+        if: inputs.build != ''
+        env:
+          COMMANDS: ${{ inputs.build }}
+        run: eval "$COMMANDS"
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            core="$GITHUB_WORKSPACE"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$' || { echo "::error::Call the memex.core workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."; exit 1; }
+            core="$RUNNER_TEMP/memex-core"
+            git init --quiet "$core"
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+            git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+            (cd "$core" && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter "@tjalve/memex-licenses..." --filter "@tjalve/memex-desktop..." build)
+          fi
+          for tool in licenses desktop; do test -f "$core/packages/$tool/dist/bin.js"; done
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          echo "Memex tools from memex.core $(git -C "$core" rev-parse HEAD)"
+      - name: Electron (the release zip of the installed electron package, checked by SHA-256)
+        working-directory: ${{ inputs.app-directory }}
+        run: node "$MEMEX_CORE/packages/desktop/dist/bin.js" fetch-electron
+      - name: Prepare
+        if: inputs.prepare != ''
+        working-directory: ${{ inputs.app-directory }}
+        env:
+          COMMANDS: ${{ inputs.prepare }}
+        run: eval "$COMMANDS"
+      - name: Pack (CLI shims, electron-builder, the app.asar check, SHA256SUMS.txt)
+        working-directory: ${{ inputs.app-directory }}
+        env:
+          MEMEX_RELEASE_TAG: ${{ needs.plan.outputs.tag }}
+          RELEASE: ${{ needs.plan.outputs.release }}
+        run: |
+          set -euo pipefail
+          if [ "$RELEASE" = true ]; then
+            node "$MEMEX_CORE/packages/desktop/dist/bin.js" pack --require-tag
+          else
+            node "$MEMEX_CORE/packages/desktop/dist/bin.js" pack
+          fi
+      - name: The contents of the build (app.asar with its first-party packages, CLI shims, notices)
+        working-directory: ${{ inputs.app-directory }}
+        env:
+          RELEASE_DIR: ${{ inputs.release-directory }}
+        run: |
+          set -euo pipefail
+          # The packages that are not from the registry (workspace, file, git) come from the nearest pnpm-lock.yaml.
+          node "$MEMEX_CORE/packages/desktop/dist/bin.js" extract "$RELEASE_DIR" --out "$RUNNER_TEMP/contents"
+      - name: Upload the contents of the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-contents-${{ matrix.id }}
+          path: ${{ runner.temp }}/contents
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+      - name: Stage the installers and their checksums
+        working-directory: ${{ inputs.app-directory }}
+        env:
+          RELEASE_DIR: ${{ inputs.release-directory }}
+          BASE: ${{ inputs.artifact-base }}
+          ID: ${{ matrix.id }}
+        run: |
+          set -euo pipefail
+          staged="$RUNNER_TEMP/staged"
+          mkdir -p "$staged"
+          names=$(sed -E 's/^[0-9a-f]{64}  //' "$RELEASE_DIR/SHA256SUMS.txt")
+          [ -n "$names" ] || { echo "::error::SHA256SUMS.txt lists no installers."; exit 1; }
+          while IFS= read -r name; do
+            case "$name" in "$BASE"-*) ;; *) echo "::error::$name is not a $BASE installer."; exit 1 ;; esac
+            cp "$RELEASE_DIR/$name" "$staged/"
+          done <<< "$names"
+          cp "$RELEASE_DIR/SHA256SUMS.txt" "$staged/SHA256SUMS-$ID.txt"
+          cd "$staged"
+          if command -v sha256sum > /dev/null; then sha256sum -c "SHA256SUMS-$ID.txt"; else shasum -a 256 -c "SHA256SUMS-$ID.txt"; fi
+          ls -l
+      - name: Upload the installers
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-${{ matrix.id }}
+          path: ${{ runner.temp }}/staged/*
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    name: Smoke test (${{ matrix.id }}, clean GitHub runner)
+    needs: build
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: linux
+            runs-on: ubuntu-24.04
+          - id: windows
+            runs-on: windows-2025
+          - id: macos
+            runs-on: macos-15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out (for the memex.core tools)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pnpm (the version in package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/memex-core"
+          git init --quiet "$core"
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            sha=$(git rev-parse HEAD)
+            git -C "$core" fetch --quiet "$GITHUB_WORKSPACE" "$sha"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$' || { echo "::error::Call the memex.core workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."; exit 1; }
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+          fi
+          git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+          (cd "$core" && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter "@tjalve/memex-desktop..." build)
+          test -f "$core/packages/desktop/dist/bin.js"
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+          echo "Memex tools from memex.core $sha"
+      - name: Download the installers
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: desktop-${{ matrix.id }}
+          path: ${{ runner.temp }}/installers
+      - name: Check the checksums
+        working-directory: ${{ runner.temp }}/installers
+        env:
+          ID: ${{ matrix.id }}
+        run: |
+          set -euo pipefail
+          ls -l
+          if command -v sha256sum > /dev/null; then sha256sum -c "SHA256SUMS-$ID.txt"; else shasum -a 256 -c "SHA256SUMS-$ID.txt"; fi
+      - name: Linux desktop session (Xvfb, D-Bus)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends xvfb xauth dbus dbus-user-session
+      - name: Install each installer and start the app (scratch folders)
+        env:
+          BASE: ${{ inputs.artifact-base }}
+          TIMEOUT: ${{ inputs.smoke-timeout }}
+          EXPECT: ${{ inputs.smoke-expect }}
+        run: |
+          set -euo pipefail
+          installers="$RUNNER_TEMP/installers"
+          work="$RUNNER_TEMP/smoke"
+          mkdir -p "$work"
+          desktop="$MEMEX_CORE/packages/desktop/dist/bin.js"
+          smoke() {
+            local label=$1 program=$2
+            shift 2
+            # Every Memex folder the app could use is a scratch folder of this run.
+            local root="$work/$label/scratch"
+            mkdir -p "$root"
+            for v in MEMEX_HOME MEMEX_ARCHIVE_HOME MEMEX_APPS_DIR MEMEX_PHOTOS_LIBRARY MEMEX_PACKS_DIR; do export "$v=$root/$v"; done
+            if [ "$RUNNER_OS" = Windows ]; then program=$(cygpath -w "$program"); fi
+            echo "=== $label: $program"
+            local check=(smoke --program "$program" --out "$work/$label/result" --timeout "$TIMEOUT")
+            if [ -n "$EXPECT" ]; then check+=(--expect "$EXPECT"); fi
+            if [ "$RUNNER_OS" = Linux ]; then
+              # A desktop session with its own D-Bus session bus and an X display; no GPU, so Chromium draws in software.
+              dbus-run-session -- xvfb-run -a -s "-screen 0 1280x800x24" node "$desktop" "${check[@]}" -- --disable-gpu "$@"
+            else
+              node "$desktop" "${check[@]}" -- "$@"
+            fi
+            cat "$work/$label/result/result.json"
+            echo "--- the shell's events"
+            cat "$work/$label/result/events.jsonl"
+          }
+          case "$RUNNER_OS" in
+            Windows)
+              exe=$(ls "$installers/$BASE"-*-windows-x64.exe)
+              target="$work/installed"
+              # NSIS per user and silent, into a scratch folder (/D must be the last argument, unquoted). Git Bash must
+              # not turn the switches into paths.
+              MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$exe" /S "/D=$(cygpath -w "$target")"
+              program=$(find "$target" -maxdepth 1 -name '*.exe' ! -iname 'Uninstall*' | head -1)
+              [ -n "$program" ] || { echo "::error::The installer put no program into $target."; ls -l "$target" || true; exit 1; }
+              ls -l "$target" "$target/resources" "$target/resources/bin" || true
+              smoke nsis "$program"
+              ;;
+            macOS)
+              dmg=$(ls "$installers/$BASE"-*-macos-arm64.dmg)
+              mount="$work/dmg"
+              mkdir -p "$mount" "$work/installed"
+              hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mount"
+              app=$(find "$mount" -maxdepth 1 -name '*.app' | head -1)
+              ditto "$app" "$work/installed/$(basename "$app")"
+              hdiutil detach "$mount"
+              app="$work/installed/$(basename "$app")"
+              codesign --verify --deep --strict --verbose=2 "$app"
+              codesign -dv "$app" 2>&1 | grep -E '^(Identifier|Signature|CodeDirectory|Runtime)' || true
+              program="$app/Contents/MacOS/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
+              smoke dmg "$program"
+              ;;
+            Linux)
+              deb=$(ls "$installers/$BASE"-*-linux-x64.deb)
+              appimage=$(ls "$installers/$BASE"-*-linux-x64.AppImage)
+              sudo apt-get install -y -q "$deb"
+              entry=$(dpkg -L "$(dpkg-deb -f "$deb" Package)" | grep '\.desktop$' | head -1)
+              program=$(sed -n 's/^Exec=\("[^"]*"\|[^ ]*\).*/\1/p' "$entry" | head -1 | tr -d '"')
+              smoke deb "$program"
+              cp "$appimage" "$work/app.AppImage"
+              chmod +x "$work/app.AppImage"
+              export APPIMAGE_EXTRACT_AND_RUN=1
+              smoke appimage "$work/app.AppImage"
+              ;;
+          esac
+      - name: Upload the smoke results (a picture and the text of the first page)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-${{ matrix.id }}
+          path: ${{ runner.temp }}/smoke/*/result/*
+          if-no-files-found: warn
+          retention-days: 7
+
+  release-set:
+    name: Release set (SHA256SUMS.txt over every installer)
+    needs: [plan, gates, build, smoke]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+      - name: Check out (for the memex.core tools)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pnpm (the version in package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Memex tools (memex.core at the pinned commit)
+        env:
+          JOB_WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/memex-core"
+          git init --quiet "$core"
+          if [ "$GITHUB_REPOSITORY" = "ZarK/memex.core" ]; then
+            sha=$(git rev-parse HEAD)
+            git -C "$core" fetch --quiet "$GITHUB_WORKSPACE" "$sha"
+          else
+            sha="$JOB_WORKFLOW_SHA"
+            printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$' || { echo "::error::Call the memex.core workflow pinned to a full commit SHA (job.workflow_sha: '$sha')."; exit 1; }
+            git -C "$core" fetch --quiet --depth 1 https://github.com/ZarK/memex.core.git "$sha"
+          fi
+          git -C "$core" -c advice.detachedHead=false checkout --quiet "$sha"
+          (cd "$core" && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter "@tjalve/memex-desktop..." build)
+          echo "MEMEX_CORE=$core" >> "$GITHUB_ENV"
+      - name: Download the installers of every platform
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: desktop-@(linux|windows|macos)
+          path: ${{ runner.temp }}/set
+          merge-multiple: true
+      - name: One SHA256SUMS.txt, checked against every installer
+        working-directory: ${{ runner.temp }}/set
+        env:
+          BASE: ${{ inputs.artifact-base }}
+        run: |
+          set -euo pipefail
+          node "$MEMEX_CORE/packages/desktop/dist/bin.js" checksums . --base "$BASE" --merge
+          mkdir -p ../release-set
+          while IFS= read -r name; do cp "$name" ../release-set/; done < <(sed -E 's/^[0-9a-f]{64}  //' SHA256SUMS.txt)
+          cp SHA256SUMS.txt ../release-set/
+          cd ../release-set
+          sha256sum -c SHA256SUMS.txt
+          ls -l
+          for os in windows macos linux; do ls | grep -q -- "-$os-" || { echo "::error::No $os installer in the set."; exit 1; }; done
+      - name: Upload the release set
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-release-set
+          path: ${{ runner.temp }}/release-set/*
+          if-no-files-found: error
+          retention-days: 7
+
+  attest:
+    name: Build provenance (release tags of a public repository)
+    needs: [plan, release-set]
+    # GitHub makes artifact attestations for private repositories only on Enterprise Cloud; a private app repository
+    # releases without them, and the release notes say so.
+    if: needs.plan.outputs.release == 'true' && github.event.repository.visibility == 'public'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    timeout-minutes: 10
+    steps:
+      # No checkout: nothing from the repository runs with these permissions.
+      - name: Download the release set
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: desktop-release-set
+          path: ${{ runner.temp }}/release-set
+      - name: Check the checksums
+        working-directory: ${{ runner.temp }}/release-set
+        run: sha256sum -c SHA256SUMS.txt
+      - name: Attest the installers
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/release-set/SHA256SUMS.txt

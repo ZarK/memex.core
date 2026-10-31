@@ -1,0 +1,10 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "app-photos.json": "schemas/surfaces/app.json",
+    "app-node.json": "schemas/surfaces/app.json",
+    "app-node-windows.json": "schemas/surfaces/app.json",
+    "app-contacts-stopped.json": "schemas/surfaces/app.json",
+    "error.json": "schemas/surfaces/error.json"
+  }
+}

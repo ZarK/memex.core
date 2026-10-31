@@ -1,0 +1,236 @@
+{
+  "format": "memex.message.fixtures/1",
+  "description": "Valid memex.message/1 and memex.call/1 records, and records that must fail the schemas. Every handle in a valid record equals normalizeHandle(raw, { region, service }) of @tjalve/memex-handles. All numbers and addresses are fictional.",
+  "region": "US",
+  "messages": [
+    {
+      "format": "memex.message/1",
+      "id": "4D1B7C0E-1F2A-4B3C-9D8E-0A1B2C3D4E5F",
+      "service": "imessage",
+      "conversation": { "id": "iMessage;-;+12015550101", "kind": "one-to-one" },
+      "sender": { "kind": "phone", "raw": "+12015550101", "status": "normalized", "value": "+12015550101" },
+      "recipients": [{ "kind": "email", "raw": "Ada.Lovelace@example.com", "status": "normalized", "value": "ada.lovelace@example.com" }],
+      "sentAt": "2026-10-23T18:41:07.512+02:00",
+      "receivedAt": "2026-10-23T18:41:08.004+02:00",
+      "text": "Look at the view from the cabin!",
+      "attachments": [{ "sha256": "3582246f913c0a8437d0a3b0f5dfe6b440e17864eef7d6282c3e80ab771ccef5", "ext": "heic", "name": "IMG_0412.HEIC", "type": "image/heic", "size": 1843302 }],
+      "edits": [{ "text": "Look at the veiw from the cabin!", "replacedAt": "2026-10-23T18:41:30+02:00" }],
+      "source": { "path": "messages/imessage/mac-mini", "run": "20261023T170000Z-3f9a0c1e", "entry": "records/messages.jsonl", "record": "184467" },
+      "converter": { "name": "memex-capture imessage", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.message/1",
+      "id": "8E2C9F14-6A7B-4C5D-8E9F-102132435465",
+      "service": "imessage",
+      "conversation": { "id": "iMessage;-;+12015550101", "kind": "one-to-one" },
+      "sender": { "kind": "email", "raw": "Ada.Lovelace@example.com", "status": "normalized", "value": "ada.lovelace@example.com" },
+      "fromMe": true,
+      "recipients": [{ "kind": "phone", "raw": "+1 201-555-0101", "status": "normalized", "value": "+12015550101" }],
+      "sentAt": "2026-10-23T18:43:00Z",
+      "text": "Beautiful. Save me a seat by the fire.",
+      "replyTo": "4D1B7C0E-1F2A-4B3C-9D8E-0A1B2C3D4E5F",
+      "source": { "path": "messages/imessage/mac-mini", "run": "20261023T170000Z-3f9a0c1e", "entry": "records/messages.jsonl", "record": "184468" },
+      "converter": { "name": "memex-capture imessage", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.message/1",
+      "id": "C0FFEE00-0000-4000-8000-000000000001",
+      "service": "sms",
+      "conversation": { "id": "SMS;-;PAKKE", "kind": "one-to-one" },
+      "sender": { "kind": "phone", "raw": "PAKKE", "status": "unparsed" },
+      "recipients": [{ "kind": "phone", "raw": "(201) 555-0100", "status": "normalized", "value": "+12015550100" }],
+      "sentAt": "2026-10-22T09:12:44+02:00",
+      "text": "Your parcel is ready for pickup. Code 0000.",
+      "source": { "path": "messages/imessage/mac-mini", "run": "20261022T080000Z-1a2b3c4d", "entry": "records/messages.jsonl", "record": "184301" },
+      "converter": { "name": "memex-capture imessage", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.message/1",
+      "id": "3EB0A1B2C3D4E5F60718",
+      "service": "whatsapp",
+      "conversation": { "id": "120363000000000001@g.us", "kind": "group", "title": "Cabin weekend" },
+      "sender": { "kind": "platform", "raw": "12015550102@s.whatsapp.net", "status": "raw", "value": "12015550102@s.whatsapp.net", "phone": "+12015550102" },
+      "sentAt": "2026-10-21T20:05:13+02:00",
+      "text": "",
+      "deleted": { "reason": "unsent", "at": "2026-10-21T20:06:00+02:00" },
+      "source": { "path": "messages/whatsapp/iphone", "run": "20261022T030000Z-0badf00d", "entry": "databases/chatstorage", "record": "ZWAMESSAGE/9921" },
+      "converter": { "name": "memex-conversations whatsapp", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.message/1",
+      "id": "<20261020091500.4412@mail.example.org>",
+      "service": "mail",
+      "conversation": { "id": "<20261019170000.1001@mail.example.org>", "kind": "mail-thread" },
+      "sender": { "kind": "email", "raw": "Bjorn Example <Bjorn@Example.org>", "status": "normalized", "value": "bjorn@example.org" },
+      "recipients": [{ "kind": "email", "raw": "ada.lovelace@example.com", "status": "normalized", "value": "ada.lovelace@example.com" }],
+      "cc": [{ "kind": "email", "raw": "CARL@EXAMPLE.NET", "status": "normalized", "value": "carl@example.net" }],
+      "sentAt": "2026-10-20T09:15:00+02:00",
+      "receivedAt": "2026-10-20T09:15:03+02:00",
+      "subject": "Re: Cabin weekend",
+      "text": "Friday works for me. I will bring the map.",
+      "attachments": [{ "sha256": "c35b21d6ca39aa7cc3b79a705d989f1a6e88b99ab43988d74048799e3db926a3", "ext": "pdf", "name": "route.pdf", "type": "application/pdf", "size": 88120 }],
+      "replyTo": "<20261019170000.1001@mail.example.org>",
+      "source": { "path": "mail/proton/main-pc", "run": "20261020T080000Z-77aa88bb", "entry": "files/INBOX/cur/1729408500.M1P1.main-pc:2,S", "record": "<20261020091500.4412@mail.example.org>" },
+      "converter": { "name": "memex-conversations mail", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.message/1",
+      "id": "msn-2004:2004-03-02.txt:41",
+      "service": "msn",
+      "conversation": { "id": "bjorn@example.net", "kind": "one-to-one" },
+      "sender": { "kind": "platform", "raw": "bjorn@example.net", "status": "raw", "value": "bjorn@example.net" },
+      "sentAt": "2004-03-02T21:14:00+01:00",
+      "timeQuality": "zone-guessed",
+      "text": "are you coming to the lan party?",
+      "attachments": [{ "missing": true, "name": "map.bmp" }],
+      "source": { "path": "imports/2026-10-30-msn-logs", "entry": "files/2004/2004-03-02.txt", "record": "2004-03-02.txt:41" },
+      "converter": { "name": "convert-msn-logs", "version": "0.1.0" }
+    }
+  ],
+  "calls": [
+    {
+      "format": "memex.call/1",
+      "id": "6F1E2D3C-4B5A-4978-8695-A4B3C2D1E0F9",
+      "service": "phone",
+      "media": "audio",
+      "handles": [{ "kind": "phone", "raw": "+1 201-555-0101", "status": "normalized", "value": "+12015550101" }],
+      "direction": "incoming",
+      "answered": true,
+      "startedAt": "2026-10-23T19:02:11+02:00",
+      "durationSeconds": 312.4,
+      "source": { "path": "calls/callhistory/mac-mini", "run": "20261023T180000Z-5e6f7a8b", "entry": "records/calls.jsonl", "record": "Z_PK/5512" },
+      "converter": { "name": "memex-capture calls", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.call/1",
+      "id": "0A9B8C7D-6E5F-4031-9293-949596979899",
+      "service": "phone",
+      "media": "audio",
+      "handles": [{ "kind": "phone", "raw": "", "status": "unparsed" }],
+      "direction": "incoming",
+      "answered": false,
+      "startedAt": "2026-10-22T12:30:00+02:00",
+      "durationSeconds": 0,
+      "source": { "path": "calls/callhistory/mac-mini", "run": "20261022T110000Z-9c0d1e2f", "entry": "records/calls.jsonl", "record": "Z_PK/5498" },
+      "converter": { "name": "memex-capture calls", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.call/1",
+      "id": "11223344-5566-4778-8899-AABBCCDDEEFF",
+      "service": "facetime",
+      "media": "video",
+      "handles": [{ "kind": "email", "raw": "carl@example.net", "status": "normalized", "value": "carl@example.net" }],
+      "direction": "outgoing",
+      "answered": true,
+      "startedAt": "2026-10-18T17:00:05Z",
+      "durationSeconds": 1520,
+      "source": { "path": "calls/callhistory/mac-mini", "run": "20261018T170000Z-aabbccdd", "entry": "records/calls.jsonl", "record": "Z_PK/5390" },
+      "converter": { "name": "memex-capture calls", "version": "0.1.0" }
+    },
+    {
+      "format": "memex.call/1",
+      "id": "call-log-2013:1358763000:+12015550123",
+      "service": "phone",
+      "handles": [{ "kind": "phone", "raw": "+1 201-555-0123", "status": "normalized", "value": "+12015550123" }],
+      "direction": "outgoing",
+      "answered": false,
+      "startedAt": "2013-01-21T10:10:00+01:00",
+      "durationSeconds": 0,
+      "timeQuality": "repaired",
+      "source": { "path": "imports/2026-10-30-sms-backup", "entry": "files/Call log/cur/1358763000.M2P1.eml", "record": "1358763000.M2P1" },
+      "converter": { "name": "convert-sms-backup-plus", "version": "0.1.0" }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "unparsed handle with a value",
+      "at": "/sender",
+      "schema": "message",
+      "patch": { "sender": { "kind": "phone", "raw": "PAKKE", "status": "unparsed", "value": "PAKKE" } }
+    },
+    {
+      "name": "normalized phone that is not E.164",
+      "at": "/sender/value",
+      "schema": "message",
+      "patch": { "sender": { "kind": "phone", "raw": "(201) 555-0101", "status": "normalized", "value": "2015550101" } }
+    },
+    {
+      "name": "normalized handle without a value",
+      "at": "/sender",
+      "schema": "message",
+      "patch": { "sender": { "kind": "email", "raw": "a@example.com", "status": "normalized" } }
+    },
+    {
+      "name": "platform handle marked normalized",
+      "at": "/sender/status",
+      "schema": "message",
+      "patch": { "sender": { "kind": "platform", "raw": "bjorn@example.net", "status": "normalized", "value": "bjorn@example.net" } }
+    },
+    {
+      "name": "time without an offset",
+      "at": "/sentAt",
+      "schema": "message",
+      "patch": { "sentAt": "2026-10-23T18:41:07" }
+    },
+    {
+      "name": "attachment without a hash that is not missing",
+      "at": "/attachments/0",
+      "schema": "message",
+      "patch": { "attachments": [{ "name": "IMG_0412.HEIC" }] }
+    },
+    {
+      "name": "attachment with an uppercase hash",
+      "at": "/attachments/0/sha256",
+      "schema": "message",
+      "patch": { "attachments": [{ "sha256": "3582246F913C0A8437D0A3B0F5DFE6B440E17864EEF7D6282C3E80AB771CCEF5" }] }
+    },
+    {
+      "name": "unknown deleted reason",
+      "at": "/deleted/reason",
+      "schema": "message",
+      "patch": { "deleted": { "reason": "hidden" } }
+    },
+    {
+      "name": "source path that is not a source folder",
+      "at": "/source/path",
+      "schema": "message",
+      "patch": { "source": { "path": "messages/imessage", "record": "1" } }
+    },
+    {
+      "name": "unknown field",
+      "at": "",
+      "schema": "message",
+      "patch": { "body": "hello" }
+    },
+    {
+      "name": "message without a converter",
+      "at": "",
+      "schema": "message",
+      "remove": ["converter"]
+    },
+    {
+      "name": "wrong format",
+      "at": "/format",
+      "schema": "message",
+      "patch": { "format": "memex.message/2" }
+    },
+    {
+      "name": "call without handles",
+      "at": "/handles",
+      "schema": "call",
+      "patch": { "handles": [] }
+    },
+    {
+      "name": "call with a missed direction",
+      "at": "/direction",
+      "schema": "call",
+      "patch": { "direction": "missed" }
+    },
+    {
+      "name": "call with a negative duration",
+      "at": "/durationSeconds",
+      "schema": "call",
+      "patch": { "durationSeconds": -1 }
+    }
+  ]
+}

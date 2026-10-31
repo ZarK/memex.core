@@ -1,0 +1,31 @@
+{
+  "record": {
+    "id": "person_1a82856897e2b43e6a9500d987493ca5",
+    "kind": "person",
+    "version": 2,
+    "state": "active",
+    "origin": "inferred",
+    "mergedInto": "person_bb472edb86809a761936d90c70aeb434",
+    "confidence": 1,
+    "review": false,
+    "fields": { "name": "Jon Example", "otherNames": ["Jonny"], "type": "person" },
+    "provenance": {
+      "name": [{ "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }],
+      "otherNames": [
+        { "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+      ],
+      "otherNames/0": [
+        { "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+      ],
+      "type": [{ "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }]
+    },
+    "alternatives": {},
+    "corrected": [],
+    "claims": [],
+    "sources": [
+      { "app": "contacts", "kind": "card", "id": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+    ],
+    "createdAt": "2026-11-16T10:00:00Z",
+    "updatedAt": "2026-11-21T11:00:00Z"
+  }
+}

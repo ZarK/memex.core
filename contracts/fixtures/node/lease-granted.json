@@ -1,0 +1,18 @@
+{
+  "lease": {
+    "id": "ls_51c7",
+    "app": "photos",
+    "function": "photos.library-analysis",
+    "lane": "background",
+    "model": {
+      "id": "siglip2-base-patch16-224",
+      "sha256": "f260c163588ce8f8dfea3dd34a196a12b38fbbec3be98f1f1f45af7958fdc9fd"
+    },
+    "batchKey": "import-2026-11-16",
+    "state": "granted",
+    "device": "gpu:0",
+    "wait": null,
+    "yieldBy": null,
+    "expiresAt": "2026-11-16T20:00:30Z"
+  }
+}

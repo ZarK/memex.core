@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/message/memex.call-1.schema.json",
+  "title": "memex.call/1",
+  "description": "One phone, FaceTime, or app call. See contracts/message.md.",
+  "type": "object",
+  "required": ["format", "id", "service", "handles", "direction", "answered", "startedAt", "durationSeconds", "source", "converter"],
+  "properties": {
+    "format": { "const": "memex.call/1" },
+    "id": { "$ref": "memex.message-1.schema.json#/$defs/id" },
+    "service": { "$ref": "memex.message-1.schema.json#/$defs/service" },
+    "media": { "enum": ["audio", "video"] },
+    "handles": { "type": "array", "minItems": 1, "items": { "$ref": "memex.message-1.schema.json#/$defs/handle" } },
+    "direction": { "enum": ["incoming", "outgoing"] },
+    "answered": { "type": "boolean" },
+    "startedAt": { "$ref": "memex.message-1.schema.json#/$defs/time" },
+    "durationSeconds": { "type": "number", "minimum": 0 },
+    "timeQuality": { "$ref": "memex.message-1.schema.json#/$defs/timeQuality" },
+    "deleted": { "$ref": "memex.message-1.schema.json#/$defs/deleted" },
+    "source": { "$ref": "memex.message-1.schema.json#/$defs/source" },
+    "converter": { "$ref": "memex.message-1.schema.json#/$defs/converter" }
+  },
+  "additionalProperties": false
+}

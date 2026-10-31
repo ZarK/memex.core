@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/correction.json",
+  "title": "Correction",
+  "description": "A decision of the user. Inference never changes it. The app makes id and createdAt when the person acts, and sends both in user.corrections.write. The input has no record for create. See contracts/user-records.md.",
+  "type": "object",
+  "required": ["id", "op", "app", "createdAt"],
+  "properties": {
+    "id": {
+      "$ref": "common.json#/$defs/correctionId",
+      "description": "The app makes it when the person acts, for example cor_ and a UUID v7 without dashes. User stores each id once: a write with an id that User has stored returns the earlier correction."
+    },
+    "op": { "enum": ["set", "clear", "reject", "restore", "merge", "create"] },
+    "app": {
+      "$ref": "common.json#/$defs/appId",
+      "description": "The app in which the user acted."
+    },
+    "createdAt": {
+      "$ref": "common.json#/$defs/utcTime",
+      "description": "The time at which the person acted, not the time of the send. User orders corrections by createdAt, then by arrival; for the same field of the same record, the later createdAt wins."
+    },
+    "record": {
+      "$ref": "common.json#/$defs/recordId",
+      "description": "The record that the correction changes. For create: the new record."
+    },
+    "records": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "common.json#/$defs/recordId" },
+      "uniqueItems": true,
+      "description": "merge: the first id stays."
+    },
+    "kind": { "$ref": "common.json#/$defs/kind" },
+    "fields": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "set: the fields to set; a list field can instead take {add, remove} (contracts/facts.md). create: all fields of the kind."
+    },
+    "names": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "clear: the fields to give back to inference. A clear that leaves a required field of the kind without a value (no claim gives one), for example any required field of a record with origin user, is stored and not applied: its result is held with the reason required-field."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "common.json#/$defs/ref" },
+      "description": "create only: the app's own records that the new record comes from, for example the Photos home. A create with sources is a repeat when an earlier create has the same kind, sources, and fields: User returns the earlier correction (record: the record that holds the fact now), makes no new record, and stores the new id as an alias of the earlier correction; the result has the new id and repeatOf; when that record is rejected, the result is held with the reason record-rejected. A create without sources is a repeat only by its id."
+    },
+    "anchors": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "../facts/facts.json#/$defs/claimRef" },
+      "description": "Set by User when it stores the correction: the claim keys of its record then. An app does not send it. After a rebuild, a correction whose record id is unknown attaches to the record that holds one of these keys."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "op": { "const": "set" } } },
+      "then": { "required": ["record", "fields"] }
+    },
+    {
+      "if": { "properties": { "op": { "const": "clear" } } },
+      "then": { "required": ["record", "names"] }
+    },
+    {
+      "if": { "properties": { "op": { "enum": ["reject", "restore"] } } },
+      "then": { "required": ["record"] }
+    },
+    { "if": { "properties": { "op": { "const": "merge" } } }, "then": { "required": ["records"] } },
+    {
+      "if": { "properties": { "op": { "not": { "const": "create" } } } },
+      "then": { "not": { "required": ["sources"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "create" } } },
+      "then": {
+        "required": ["kind", "fields"],
+        "allOf": [{ "$ref": "common.json#/$defs/kindFields" }]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

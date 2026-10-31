@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/identity.json",
+  "title": "Identity fields",
+  "description": "A handle of the person: how evidence finds them. from and to resolve a reused number by the date of the evidence.",
+  "type": "object",
+  "required": ["type", "value"],
+  "properties": {
+    "type": { "enum": ["email", "phone", "handle"] },
+    "value": { "$ref": "common.json#/$defs/handle" },
+    "service": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$",
+      "description": "For a handle: the service, for example signal."
+    },
+    "label": { "$ref": "../user/common.json#/$defs/text" },
+    "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "to": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "shared": {
+      "type": "boolean",
+      "description": "true when evidence shows that more than one person uses it, for example a family address. A shared identity never resolves evidence to one person."
+    }
+  },
+  "additionalProperties": false
+}

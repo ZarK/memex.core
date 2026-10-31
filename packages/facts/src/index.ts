@@ -1,0 +1,37 @@
+export { openFacts, FactsEngine, FACTS_MIGRATIONS_DIR, FACTS_SCOPE, type FactsOptions, type ClaimListItem } from './engine.js';
+export {
+  userHub,
+  contactsHub,
+  userKinds,
+  contactsKinds,
+  joinFunction,
+  placePrecision,
+  type HubDefinition,
+  type HubSubjects,
+  type KindRule,
+  type SpanRule,
+  type JoinRule,
+  type JoinFunction,
+  type JoinItem,
+  type JoinCluster,
+} from './kinds.js';
+export { combine, strongerFirst, emptyFold, foldCorrection, type CombineClaim, type Combined, type Fold } from './combine.js';
+export {
+  FactsError,
+  type FactsErrorCode,
+  type Subject,
+  type ClaimInput,
+  type ClaimsWriteInput,
+  type ClaimsWriteOutput,
+  type ClaimsWriteCounts,
+  type Correction,
+  type CorrectionOp,
+  type CorrectionsWriteInput,
+  type CorrectionsWriteOutput,
+  type CorrectionResult,
+  type FactsRecordOut,
+  type Change,
+  type ChangesListInput,
+  type ListInput,
+  type Page,
+} from './types.js';

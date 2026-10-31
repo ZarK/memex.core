@@ -1,0 +1,16 @@
+{
+  "scope": "photos.circles",
+  "claims": [
+    {
+      "key": "circle:climbing:person_bb472edb86809a761936d90c70aeb434",
+      "kind": "circle",
+      "subject": { "person": "person_bb472edb86809a761936d90c70aeb434" },
+      "confidence": 1,
+      "method": "user:confirmed-circle/1",
+      "generation": 9,
+      "seen": { "first": "2019-06-01T16:20:00Z", "last": "2025-09-14T12:05:00Z" },
+      "fields": { "name": "climbing", "from": "2019" },
+      "sources": [{ "app": "photos", "kind": "circle", "id": "circle_17" }]
+    }
+  ]
+}

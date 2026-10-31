@@ -1,0 +1,24 @@
+{
+  "changeId": "chg_4b8e2d0f6a1c3e5b7d9f0a2c4e6b8d1f",
+  "summary": "1 correction stored.",
+  "corrections": [
+    {
+      "id": "cor_019a6b2f4c8e7d31a5f0b9e2c4d6a8f1",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": { "title": "Lisbon and Sintra" },
+      "app": "journey",
+      "createdAt": "2026-11-21T08:15:40Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_019a6b2f4c8e7d31a5f0b9e2c4d6a8f1",
+      "status": "applied",
+      "repeat": false,
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "version": 6,
+      "state": "active"
+    }
+  ]
+}

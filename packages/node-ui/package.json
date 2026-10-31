@@ -1,0 +1,51 @@
+{
+  "name": "@tjalve/memex-node-ui",
+  "version": "0.1.0",
+  "description": "Memex.Node settings as framework-free custom elements: packs, backends and routes, and the pack store location.",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/node-ui"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/node-ui#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@tjalve/memex-node-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,19 @@
+packages:
+  - packages/*
+  - packages/desktop/examples/*
+
+# Supply-chain settings. pnpm 11 reads them here; .npmrc holds the same
+# settings for npm.
+saveExact: true
+ignoreScripts: true
+# 14 days, in minutes. Our own packages are exempt, so a release of one
+# memex.core package can be used by the next one at once.
+minimumReleaseAge: 20160
+minimumReleaseAgeExclude:
+  - '@tjalve/*'
+
+# better-sqlite3 is an optional peer of @tjalve/memex-sqlite. With ignoreScripts
+# its native build does not run, and its tests are skipped. This entry only
+# records the decision, so pnpm does not stop on an undecided build.
+allowBuilds:
+  better-sqlite3: true

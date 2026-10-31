@@ -1,0 +1,35 @@
+{
+  "id": "home_b49bdb6ef2147f6ba82c726cff7438e8",
+  "kind": "home",
+  "version": 1,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "confidence": 0.9,
+  "review": true,
+  "reviewReasons": ["possible-duplicate"],
+  "fields": { "label": "home", "address": "Eksempelveien 1", "town": "Trondheim", "country": "NO" },
+  "provenance": {
+    "label": [{ "scope": "contacts.homes", "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0" }],
+    "address": [
+      { "scope": "contacts.homes", "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0" }
+    ],
+    "town": [{ "scope": "contacts.homes", "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0" }],
+    "country": [
+      { "scope": "contacts.homes", "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0" }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "contacts.homes",
+      "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0",
+      "confidence": 0.9,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [{ "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-16T10:00:00Z"
+}

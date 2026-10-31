@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "invalid_input",
+    "message": "from: Invalid date.",
+    "field": "from",
+    "hint": "Use YYYY-MM-DD."
+  }
+}

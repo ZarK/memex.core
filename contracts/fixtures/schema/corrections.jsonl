@@ -1,0 +1,6 @@
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e61","op":"set","app":"photos","record":"trip_0451f6f8dcec05dfbabdd9f2b737f179","fields":{"title":"Lisbon with Sam"},"createdAt":"2026-11-18T10:00:00.000Z"}
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e62","op":"reject","app":"photos","record":"trip_bcd7c8ea8f297e446adc53dcaca993dc","createdAt":"2026-11-18T10:01:00.000Z"}
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e63","op":"create","app":"workspace","record":"milestone_5d1e0c7a9b3f4e2d8c6a1b0f9e8d7c6b","kind":"milestone","fields":{"title":"Moved to Bergen","date":"2019-08"},"createdAt":"2026-11-18T10:02:00.000Z"}
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e64","op":"set","app":"photos","record":"trip_c9d59c159678dba73e20e208125c4913","fields":{"title":"Bergen weekend","countries":["NO","SE"]},"createdAt":"2026-11-18T10:03:00.000Z"}
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e65","op":"clear","app":"photos","record":"trip_c9d59c159678dba73e20e208125c4913","names":["countries"],"createdAt":"2026-11-18T10:04:00.000Z"}
+{"id":"cor_3f6a0c1e9b2d4a7f8e5c1b0d9a8f7e66","op":"merge","app":"photos","records":["trip_0451f6f8dcec05dfbabdd9f2b737f179","trip_ebbd52757c1cb259e9e74db1b2848436"],"createdAt":"2026-11-18T10:05:00.000Z"}

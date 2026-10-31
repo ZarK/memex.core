@@ -1,0 +1,7 @@
+{
+  "tool": "edit",
+  "imageUploadId": "up_3a9c",
+  "quality": "final",
+  "source": { "app": "photos", "kind": "item", "id": "it_0c9e" },
+  "params": { "prompt": "Remove the lamp post", "maskUploadId": "up_3a9d", "strength": 0.6 }
+}

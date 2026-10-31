@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# No token permissions by default. Each job asks only for what it reads.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Only pull request runs are cancelled: every push to main must finish, so each push range is checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    # The reusable CI of every Memex repository, from this repository's own commit.
+    uses: ./.github/workflows/reusable-ci.yml
+    permissions:
+      contents: read
+    with:
+      license: MIT
+      stack: pnpm
+      node-versions: '["22", "24"]'
+      build: pnpm build
+      typecheck: pnpm typecheck
+      test: pnpm test
+
+  desktop-linux:
+    # The desktop shell on Linux: the AppImage and the deb of the example app, built, installed, started and checked.
+    name: Desktop shell on Linux (AppImage and deb)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Xvfb and D-Bus
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends xvfb xauth dbus dbus-user-session
+      - name: Set up pnpm (the version in package.json)
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Install (frozen lockfile, no install scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build
+        run: pnpm build
+      - name: Build, install, start and check the AppImage and the deb
+        run: bash scripts/ci/desktop-linux.sh "$RUNNER_TEMP/desktop"

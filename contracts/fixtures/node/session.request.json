@@ -1,0 +1,6 @@
+{
+  "app": "workspace",
+  "function": "workspace.live-voice",
+  "modalities": ["audio", "image"],
+  "voice": "af_heart"
+}

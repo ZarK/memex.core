@@ -1,0 +1,17 @@
+{
+  "corrections": [
+    {
+      "id": "cor_01d3b9f27a6c4e58b0a1c2d3e4f5a6b7",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": {
+        "participants": {
+          "add": [{ "app": "contacts", "kind": "person", "id": "ct_kim" }],
+          "remove": [{ "app": "contacts", "kind": "person", "id": "ct_sam" }]
+        }
+      },
+      "app": "photos",
+      "createdAt": "2026-11-21T09:15:00Z"
+    }
+  ]
+}

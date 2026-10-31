@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/contracts/provenance.schema.json",
+  "title": "Provenance",
+  "description": "Where an entity came from. (source, content_hash) is the import dedupe key and unique from schema 0.3.",
+  "type": "object",
+  "required": ["id", "entity_id", "source", "recorded_at"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "entity_id": { "type": "string", "format": "uuid" },
+    "source": {
+      "type": "string",
+      "pattern": "^[a-z]+(:[a-z0-9_.-]+)*$",
+      "description": "Namespaced pipeline id, e.g. 'import:csv:sparebank1' or 'connector:actual'."
+    },
+    "source_ref": {
+      "type": ["string", "null"],
+      "description": "Specific origin: file path, statement id, or external record id."
+    },
+    "content_hash": {
+      "type": ["string", "null"],
+      "description": "Stable hash of the identifying source fields, hex-encoded."
+    },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "batch_id": {
+      "type": ["string", "null"],
+      "description": "The import run that wrote the row. Schema 0.3."
+    },
+    "file_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the whole source file, lowercase hex. Schema 0.3."
+    },
+    "reader": {
+      "type": ["string", "null"],
+      "description": "The parser and its version, e.g. 'finance.csv.sparebank1/2'. Schema 0.3."
+    }
+  },
+  "additionalProperties": false
+}

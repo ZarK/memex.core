@@ -1,0 +1,35 @@
+{
+  "id": "identity_105ff82b9f019b502b4524759fa6c220",
+  "kind": "identity",
+  "version": 1,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "confidence": 0.95,
+  "review": false,
+  "fields": { "type": "phone", "value": "+12015550147", "label": "mobile" },
+  "provenance": {
+    "type": [
+      { "scope": "contacts.identities", "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0" }
+    ],
+    "value": [
+      { "scope": "contacts.identities", "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0" }
+    ],
+    "label": [
+      { "scope": "contacts.identities", "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0" }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "contacts.identities",
+      "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0",
+      "confidence": 0.95,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [{ "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-16T10:00:00Z"
+}

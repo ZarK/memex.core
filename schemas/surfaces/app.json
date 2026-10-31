@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/surfaces/app.json",
+  "title": "App record (memex.app/1)",
+  "description": "<apps>/<app>.json. How other programs find an installed app and reach it while it runs. See contracts/surfaces.md.",
+  "type": "object",
+  "required": ["format", "app", "name", "kind", "version", "executable", "running"],
+  "properties": {
+    "format": { "const": "memex.app/1" },
+    "app": { "type": "string", "pattern": "^[a-z][a-z0-9]*$", "description": "The app id from contracts/storage.md. The same as the file name." },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["app", "service", "tool"] },
+    "version": { "type": "string", "minLength": 1 },
+    "executable": { "type": "string", "minLength": 1, "description": "Absolute path of the program that starts the app." },
+    "mcp": {
+      "type": "object",
+      "required": ["command", "args"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "running": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["pid", "startedAt"],
+          "properties": {
+            "pid": { "type": "integer", "minimum": 1 },
+            "startedAt": { "type": "string", "format": "date-time" },
+            "url": { "type": "string", "pattern": "^http://127\\.0\\.0\\.1:[0-9]{1,5}$" },
+            "tokenFile": { "type": "string", "minLength": 1 },
+            "socket": { "type": "string", "minLength": 1, "description": "Named pipe (Windows; a new random name at each start) or Unix socket. Memex.Node only." }
+          },
+          "oneOf": [
+            { "required": ["url", "tokenFile"], "not": { "required": ["socket"] } },
+            { "required": ["socket"], "not": { "required": ["url"] } }
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

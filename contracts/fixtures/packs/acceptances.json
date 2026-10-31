@@ -1,0 +1,12 @@
+{
+  "format": "memex.acceptances/1",
+  "acceptances": [
+    {
+      "pack": "example-gated-model",
+      "version": "2025-06-01",
+      "textSha256": "941aa5f9008f16a79a56b18bafc8e0a9290681bf6dfb76312e0f9d4188999696",
+      "acceptedAt": "2026-11-12T19:30:00Z",
+      "app": "workspace"
+    }
+  ]
+}

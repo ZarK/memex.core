@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/record.json",
+  "title": "Record",
+  "description": "One fact, made from claims and corrections, with provenance per field and the values that lost. See contracts/user-records.md and contracts/facts.md.",
+  "type": "object",
+  "required": [
+    "id", "kind", "version", "state", "origin", "confidence", "review", "fields", "provenance",
+    "alternatives", "corrected", "claims", "sources", "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "id": { "$ref": "common.json#/$defs/recordId" },
+    "kind": { "$ref": "common.json#/$defs/kind" },
+    "version": { "type": "integer", "minimum": 1 },
+    "state": { "enum": ["active", "rejected"] },
+    "origin": { "enum": ["inferred", "user"] },
+    "confidence": { "$ref": "common.json#/$defs/confidence" },
+    "review": { "type": "boolean" },
+    "reviewReasons": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "../facts/facts.json#/$defs/reviewReason" }
+    },
+    "fields": { "type": "object" },
+    "provenance": { "$ref": "../facts/facts.json#/$defs/provenance" },
+    "alternatives": { "$ref": "../facts/facts.json#/$defs/alternatives" },
+    "corrected": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scope", "key", "confidence"],
+        "properties": {
+          "scope": { "$ref": "common.json#/$defs/scope" },
+          "partition": { "$ref": "common.json#/$defs/partition" },
+          "key": { "$ref": "common.json#/$defs/claimKey" },
+          "confidence": { "$ref": "common.json#/$defs/confidence" },
+          "seen": { "$ref": "../facts/facts.json#/$defs/seen" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sources": { "type": "array", "maxItems": 100, "items": { "$ref": "common.json#/$defs/ref" } },
+    "createdAt": { "$ref": "common.json#/$defs/utcTime" },
+    "updatedAt": { "$ref": "common.json#/$defs/utcTime" }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    { "$ref": "common.json#/$defs/kindFields" },
+    {
+      "if": { "properties": { "review": { "const": true } }, "required": ["review"] },
+      "then": { "required": ["reviewReasons"] },
+      "else": { "not": { "required": ["reviewReasons"] } }
+    }
+  ]
+}

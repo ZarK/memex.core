@@ -1,0 +1,52 @@
+{
+  "name": "@tjalve/memex-surfaces",
+  "version": "0.1.0",
+  "description": "Memex surfaces: the capability registry, the stdio MCP server, the /api/v1 router with OpenAPI 3.1, the request checks, the memex-<app> CLI, the app record, and the memex-surfaces check",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/surfaces"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/surfaces#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "memex-surfaces": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@tjalve/memex-storage": "workspace:*",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

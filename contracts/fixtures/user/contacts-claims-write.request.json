@@ -1,0 +1,17 @@
+{
+  "scope": "contacts.homes",
+  "claims": [
+    {
+      "key": "card_5e0c4a1b2d3f4e5a6b7c8d9e0f1a2b3c:adr:0",
+      "kind": "home",
+      "confidence": 0.9,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" },
+      "fields": { "type": "home", "town": "Bergen", "country": "NO" },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_5e0c4a1b2d3f4e5a6b7c8d9e0f1a2b3c" }
+      ]
+    }
+  ]
+}

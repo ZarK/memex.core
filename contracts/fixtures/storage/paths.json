@@ -1,0 +1,419 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "memexPaths() cases. Each case has an input and either the expected folders or the expected error code. 'source', when present, is the expected dataSource() for the same input.",
+  "cases": [
+    {
+      "name": "windows defaults",
+      "input": { "app": "photos", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" } },
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Photos",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "C:\\Users\\ada\\Memex\\Archive"
+      }
+    },
+    {
+      "name": "windows without LOCALAPPDATA",
+      "input": { "app": "finance", "platform": "win32", "home": "C:\\Users\\ada", "env": {} },
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Finance",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "C:\\Users\\ada\\Memex\\Archive"
+      }
+    },
+    {
+      "name": "windows development folder with forward slashes",
+      "input": {
+        "app": "codesessions", "platform": "win32", "home": "C:\\Users\\ada",
+        "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_HOME": "F:/memex-dev", "MEMEX_PACKS_DIR": "F:/memex-dev/packs", "MEMEX_APPS_DIR": "F:/memex-dev/apps/" }
+      },
+      "expected": {
+        "data": "F:\\memex-dev\\CodeSessions",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\CodeSessions\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\CodeSessions\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\CodeSessions\\State",
+        "packs": "F:\\memex-dev\\packs",
+        "apps": "F:\\memex-dev\\apps",
+        "archive": "F:\\memex-dev\\Archive"
+      }
+    },
+    {
+      "name": "app variable beats MEMEX_HOME",
+      "input": { "app": "health", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_HOME": "F:\\dev", "MEMEX_HEALTH_HOME": "D:\\Health\\" } },
+      "expected": {
+        "data": "D:\\Health",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Health\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Health\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Health\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "F:\\dev\\Archive"
+      }
+    },
+    {
+      "name": "flag beats the app variable",
+      "input": { "app": "study", "platform": "win32", "home": "C:\\Users\\ada", "flag": "E:\\Study Library", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_STUDY_HOME": "D:\\s", "MEMEX_HOME": "F:\\dev" } },
+      "expected": {
+        "data": "E:\\Study Library",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "F:\\dev\\Archive"
+      }
+    },
+    {
+      "name": "archive variable for a collector",
+      "input": { "app": "capture", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_ARCHIVE_HOME": "P:\\Proton Drive\\Memex Archive" } },
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Capture",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Capture\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Capture\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Capture\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "P:\\Proton Drive\\Memex Archive"
+      }
+    },
+    {
+      "name": "flag of the archive app sets the archive",
+      "input": { "app": "archive", "platform": "win32", "home": "C:\\Users\\ada", "flag": "G:\\Arch", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "MEMEX_ARCHIVE_HOME": "P:\\x" } },
+      "expected": {
+        "data": "G:\\Arch",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Archive\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Archive\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Archive\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "G:\\Arch"
+      }
+    },
+    {
+      "name": "retired variables are ignored",
+      "input": { "app": "finance", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "FINANCE_DB": "D:\\finance\\finance.db", "MEMEX_INSTANCE_DIR": "D:\\inst" } },
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Finance",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "C:\\Users\\ada\\Memex\\Archive"
+      }
+    },
+    {
+      "name": "macos defaults",
+      "input": { "app": "node", "platform": "darwin", "home": "/Users/ada", "env": {} },
+      "expected": {
+        "data": "/Users/ada/Memex/Node",
+        "cache": "/Users/ada/Library/Caches/Memex/Node",
+        "logs": "/Users/ada/Library/Logs/Memex/Node",
+        "state": "/Users/ada/Library/Application Support/Memex/Node",
+        "packs": "/Users/ada/Library/Application Support/Memex/Packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/Users/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "macos MEMEX_HOME; XDG variables do not apply",
+      "input": { "app": "conversations", "platform": "darwin", "home": "/Users/ada", "env": { "MEMEX_HOME": "/tmp/mx", "XDG_CACHE_HOME": "/tmp/cache" } },
+      "expected": {
+        "data": "/tmp/mx/Conversations",
+        "cache": "/Users/ada/Library/Caches/Memex/Conversations",
+        "logs": "/Users/ada/Library/Logs/Memex/Conversations",
+        "state": "/Users/ada/Library/Application Support/Memex/Conversations",
+        "packs": "/Users/ada/Library/Application Support/Memex/Packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/tmp/mx/Archive"
+      }
+    },
+    {
+      "name": "linux defaults",
+      "input": { "app": "workspace", "platform": "linux", "home": "/home/ada", "env": {} },
+      "expected": {
+        "data": "/home/ada/Memex/Workspace",
+        "cache": "/home/ada/.cache/memex/workspace",
+        "logs": "/home/ada/.local/state/memex/workspace/logs",
+        "state": "/home/ada/.local/state/memex/workspace/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "linux XDG variables; a relative one is ignored",
+      "input": { "app": "user", "platform": "linux", "home": "/home/ada", "env": { "XDG_CACHE_HOME": "/var/cache/ada", "XDG_STATE_HOME": "/srv/state/", "XDG_DATA_HOME": "share" } },
+      "expected": {
+        "data": "/home/ada/Memex/User",
+        "cache": "/var/cache/ada/memex/user",
+        "logs": "/srv/state/memex/user/logs",
+        "state": "/srv/state/memex/user/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "empty variables count as unset",
+      "input": { "app": "calendar", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_HOME": "", "MEMEX_CALENDAR_HOME": "", "MEMEX_PACKS_DIR": "" } },
+      "expected": {
+        "data": "/home/ada/Memex/Calendar",
+        "cache": "/home/ada/.cache/memex/calendar",
+        "logs": "/home/ada/.local/state/memex/calendar/logs",
+        "state": "/home/ada/.local/state/memex/calendar/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "other platforms use the linux column",
+      "input": { "app": "contacts", "platform": "freebsd", "home": "/home/ada", "env": { "MEMEX_CONTACTS_HOME": "/data/contacts/" } },
+      "expected": {
+        "data": "/data/contacts",
+        "cache": "/home/ada/.cache/memex/contacts",
+        "logs": "/home/ada/.local/state/memex/contacts/logs",
+        "state": "/home/ada/.local/state/memex/contacts/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "studio on linux",
+      "input": { "app": "studio", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_STUDIO_HOME": "/mnt/nas/studio", "MEMEX_APPS_DIR": "/opt/memex/apps" } },
+      "expected": {
+        "data": "/mnt/nas/studio",
+        "cache": "/home/ada/.cache/memex/studio",
+        "logs": "/home/ada/.local/state/memex/studio/logs",
+        "state": "/home/ada/.local/state/memex/studio/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/opt/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "unknown app id",
+      "input": { "app": "dashboard", "platform": "linux", "home": "/home/ada", "env": {} },
+      "error": "unknown-app"
+    },
+    {
+      "name": "relative MEMEX_HOME",
+      "input": { "app": "photos", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_HOME": "memex" } },
+      "error": "relative-path"
+    },
+    {
+      "name": "drive-relative windows path",
+      "input": { "app": "finance", "platform": "win32", "home": "C:\\Users\\ada", "env": { "MEMEX_FINANCE_HOME": "D:finance" } },
+      "error": "relative-path"
+    },
+    {
+      "name": "relative flag",
+      "input": { "app": "photos", "platform": "darwin", "home": "/Users/ada", "flag": "./library", "env": {} },
+      "error": "relative-path"
+    },
+    {
+      "name": "relative home",
+      "input": { "app": "photos", "platform": "linux", "home": "ada", "env": {} },
+      "error": "relative-path"
+    },
+    {
+      "name": "windows chosen data and cache folders from locations.json",
+      "input": {
+        "app": "photos", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+        "locations": { "format": "memex.locations/1", "apps": { "photos": { "data": "D:/Memex/Photos/", "cache": "E:\\Cache\\Photos" }, "archive": { "data": "P:\\Proton Drive\\Memex Archive" } } }
+      },
+      "source": "locations",
+      "expected": {
+        "data": "D:\\Memex\\Photos",
+        "cache": "E:\\Cache\\Photos",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\State",
+        "packs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "P:\\Proton Drive\\Memex Archive"
+      }
+    },
+    {
+      "name": "the variable comes before locations.json",
+      "input": {
+        "app": "finance", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_FINANCE_HOME": "/srv/finance" },
+        "locations": { "format": "memex.locations/1", "apps": { "finance": { "data": "/media/ada/disk/Finance" } } }
+      },
+      "source": "variable",
+      "expected": {
+        "data": "/srv/finance",
+        "cache": "/home/ada/.cache/memex/finance",
+        "logs": "/home/ada/.local/state/memex/finance/logs",
+        "state": "/home/ada/.local/state/memex/finance/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "MEMEX_HOME ignores locations.json, also the chosen cache and archive",
+      "input": {
+        "app": "study", "platform": "darwin", "home": "/Users/ada", "env": { "MEMEX_HOME": "/tmp/run" },
+        "locations": { "format": "memex.locations/1", "apps": { "study": { "data": "/Volumes/Disk/Study", "cache": "/Volumes/Disk/cache" }, "archive": { "data": "/Volumes/Disk/Archive" } } }
+      },
+      "source": "memex-home",
+      "expected": {
+        "data": "/tmp/run/Study",
+        "cache": "/Users/ada/Library/Caches/Memex/Study",
+        "logs": "/Users/ada/Library/Logs/Memex/Study",
+        "state": "/Users/ada/Library/Application Support/Memex/Study",
+        "packs": "/Users/ada/Library/Application Support/Memex/Packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/tmp/run/Archive"
+      }
+    },
+    {
+      "name": "the archive app reads its own entry in locations.json",
+      "input": {
+        "app": "archive", "platform": "linux", "home": "/home/ada", "env": {},
+        "locations": { "format": "memex.locations/1", "apps": { "archive": { "data": "/home/ada/Sync/Archive" } } }
+      },
+      "source": "locations",
+      "expected": {
+        "data": "/home/ada/Sync/Archive",
+        "cache": "/home/ada/.cache/memex/archive",
+        "logs": "/home/ada/.local/state/memex/archive/logs",
+        "state": "/home/ada/.local/state/memex/archive/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Sync/Archive"
+      }
+    },
+    {
+      "name": "MEMEX_ARCHIVE_HOME comes before the archive entry in locations.json",
+      "input": {
+        "app": "contacts", "platform": "linux", "home": "/home/ada", "env": { "MEMEX_ARCHIVE_HOME": "/srv/archive" },
+        "locations": { "format": "memex.locations/1", "apps": { "archive": { "data": "/home/ada/Sync/Archive" } } }
+      },
+      "source": "default",
+      "expected": {
+        "data": "/home/ada/Memex/Contacts",
+        "cache": "/home/ada/.cache/memex/contacts",
+        "logs": "/home/ada/.local/state/memex/contacts/logs",
+        "state": "/home/ada/.local/state/memex/contacts/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/srv/archive"
+      }
+    },
+    {
+      "name": "the flag comes first",
+      "input": {
+        "app": "photos", "platform": "linux", "home": "/home/ada", "env": {}, "flag": "/data/photos",
+        "locations": { "format": "memex.locations/1", "apps": { "photos": { "data": "/media/ada/disk/Photos" } } }
+      },
+      "source": "flag",
+      "expected": {
+        "data": "/data/photos",
+        "cache": "/home/ada/.cache/memex/photos",
+        "logs": "/home/ada/.local/state/memex/photos/logs",
+        "state": "/home/ada/.local/state/memex/photos/state",
+        "packs": "/home/ada/.local/share/memex/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "relative folder in locations.json",
+      "input": {
+        "app": "photos", "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+        "locations": { "format": "memex.locations/1", "apps": { "photos": { "data": "Photos" } } }
+      },
+      "error": "relative-path"
+    },
+    {
+      "name": "windows pack store moved by Memex.Node (top-level packs in locations.json)",
+      "input": {
+        "app": "photos", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+        "locations": { "format": "memex.locations/1", "apps": {}, "packs": "E:/Memex Packs/" }
+      },
+      "source": "default",
+      "packsSource": "locations",
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Photos",
+        "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Cache",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Logs",
+        "state": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\State",
+        "packs": "E:\\Memex Packs",
+        "apps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Apps",
+        "archive": "C:\\Users\\ada\\Memex\\Archive"
+      }
+    },
+    {
+      "name": "linux pack store moved, with the chosen folders of an app beside it",
+      "input": {
+        "app": "study", "platform": "linux", "home": "/home/ada", "env": {},
+        "locations": { "format": "memex.locations/1", "apps": { "study": { "data": "/media/ada/disk/Study" } }, "packs": "/media/ada/disk/packs" }
+      },
+      "source": "locations",
+      "packsSource": "locations",
+      "expected": {
+        "data": "/media/ada/disk/Study",
+        "cache": "/home/ada/.cache/memex/study",
+        "logs": "/home/ada/.local/state/memex/study/logs",
+        "state": "/home/ada/.local/state/memex/study/state",
+        "packs": "/media/ada/disk/packs",
+        "apps": "/home/ada/.local/share/memex/apps",
+        "archive": "/home/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "MEMEX_PACKS_DIR comes before the moved pack store",
+      "input": {
+        "app": "node", "platform": "darwin", "home": "/Users/ada", "env": { "MEMEX_PACKS_DIR": "/Volumes/Fast/packs" },
+        "locations": { "format": "memex.locations/1", "apps": {}, "packs": "/Volumes/Disk/packs" }
+      },
+      "source": "default",
+      "packsSource": "variable",
+      "expected": {
+        "data": "/Users/ada/Memex/Node",
+        "cache": "/Users/ada/Library/Caches/Memex/Node",
+        "logs": "/Users/ada/Library/Logs/Memex/Node",
+        "state": "/Users/ada/Library/Application Support/Memex/Node",
+        "packs": "/Volumes/Fast/packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/Users/ada/Memex/Archive"
+      }
+    },
+    {
+      "name": "MEMEX_HOME ignores the moved pack store",
+      "input": {
+        "app": "photos", "platform": "darwin", "home": "/Users/ada", "env": { "MEMEX_HOME": "/tmp/run" },
+        "locations": { "format": "memex.locations/1", "apps": {}, "packs": "/Volumes/Disk/packs" }
+      },
+      "source": "memex-home",
+      "packsSource": "default",
+      "expected": {
+        "data": "/tmp/run/Photos",
+        "cache": "/Users/ada/Library/Caches/Memex/Photos",
+        "logs": "/Users/ada/Library/Logs/Memex/Photos",
+        "state": "/Users/ada/Library/Application Support/Memex/Photos",
+        "packs": "/Users/ada/Library/Application Support/Memex/Packs",
+        "apps": "/Users/ada/Library/Application Support/Memex/Apps",
+        "archive": "/tmp/run/Archive"
+      }
+    },
+    {
+      "name": "relative pack store in locations.json",
+      "input": {
+        "app": "photos", "platform": "linux", "home": "/home/ada", "env": {},
+        "locations": { "format": "memex.locations/1", "apps": {}, "packs": "packs" }
+      },
+      "error": "relative-path"
+    }
+  ]
+}

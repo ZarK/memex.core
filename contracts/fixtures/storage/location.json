@@ -1,0 +1,294 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "describeLocation() cases. 'exists' lists the paths that exist (for markers), 'files' lists the paths that are regular files (they exist too), 'realpath' maps a path to its real path (a path not listed does not resolve), and 'mounts' is the text of /proc/self/mounts. A case has the expected description or the expected error code.",
+  "cases": [
+    {
+      "name": "windows local folder",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+      "path": "C:\\Users\\ada\\Memex\\Photos",
+      "expected": { "path": "C:\\Users\\ada\\Memex\\Photos", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "windows OneDrive from the variable",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "OneDrive": "C:\\Users\\ada\\OneDrive" },
+      "path": "C:\\Users\\ada\\OneDrive\\Memex\\Photos",
+      "expected": { "path": "C:\\Users\\ada\\OneDrive\\Memex\\Photos", "kind": "sync", "provider": "OneDrive", "root": "C:\\Users\\ada\\OneDrive", "evidence": "variable" }
+    },
+    {
+      "name": "windows OneDrive for Business with any folder name, compared without case",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "OneDriveCommercial": "C:\\Users\\ada\\Contoso Files" },
+      "path": "c:\\users\\ada\\contoso files\\Memex\\Finance",
+      "expected": { "path": "c:\\users\\ada\\contoso files\\Memex\\Finance", "kind": "sync", "provider": "OneDrive", "root": "C:\\Users\\ada\\Contoso Files", "evidence": "variable" }
+    },
+    {
+      "name": "windows OneDrive segment with an organization",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "D:\\OneDrive - Contoso\\Memex\\Finance",
+      "expected": { "path": "D:\\OneDrive - Contoso\\Memex\\Finance", "kind": "sync", "provider": "OneDrive", "root": "D:\\OneDrive - Contoso", "evidence": "segment" }
+    },
+    {
+      "name": "windows Dropbox segment with a team name, forward slashes",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "C:/Users/ada/Dropbox (Personal)/Memex/Finance/",
+      "expected": { "path": "C:\\Users\\ada\\Dropbox (Personal)\\Memex\\Finance", "kind": "sync", "provider": "Dropbox", "root": "C:\\Users\\ada\\Dropbox (Personal)", "evidence": "segment" }
+    },
+    {
+      "name": "windows Dropbox in a folder with another name, found by its .dropbox marker",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "E:\\Shared Stuff\\Memex\\Study",
+      "files": ["E:\\Shared Stuff\\.dropbox"],
+      "expected": { "path": "E:\\Shared Stuff\\Memex\\Study", "kind": "sync", "provider": "Dropbox", "root": "E:\\Shared Stuff", "evidence": "marker" }
+    },
+    {
+      "name": "windows iCloud Drive",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "C:\\Users\\ada\\iCloudDrive\\Memex",
+      "expected": { "path": "C:\\Users\\ada\\iCloudDrive\\Memex", "kind": "sync", "provider": "iCloud Drive", "root": "C:\\Users\\ada\\iCloudDrive", "evidence": "segment" }
+    },
+    {
+      "name": "windows Google Drive on its virtual drive",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "G:\\My Drive\\Memex\\Contacts",
+      "expected": { "path": "G:\\My Drive\\Memex\\Contacts", "kind": "sync", "provider": "Google Drive", "root": "G:\\My Drive", "evidence": "segment" }
+    },
+    {
+      "name": "windows Proton Drive",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "C:\\Users\\ada\\Proton Drive\\ada\\My files\\Memex",
+      "expected": { "path": "C:\\Users\\ada\\Proton Drive\\ada\\My files\\Memex", "kind": "sync", "provider": "Proton Drive", "root": "C:\\Users\\ada\\Proton Drive", "evidence": "segment" }
+    },
+    {
+      "name": "windows Nextcloud",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "C:\\Users\\ada\\Nextcloud\\Memex\\Health",
+      "expected": { "path": "C:\\Users\\ada\\Nextcloud\\Memex\\Health", "kind": "sync", "provider": "Nextcloud", "root": "C:\\Users\\ada\\Nextcloud", "evidence": "segment" }
+    },
+    {
+      "name": "windows Syncthing, found by the .stfolder marker in a parent",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "C:\\Users\\ada\\Sync\\Memex\\Photos",
+      "exists": ["C:\\Users\\ada\\Sync\\.stfolder"],
+      "expected": { "path": "C:\\Users\\ada\\Sync\\Memex\\Photos", "kind": "sync", "provider": "Syncthing", "root": "C:\\Users\\ada\\Sync", "evidence": "marker" }
+    },
+    {
+      "name": "windows network share",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "\\\\nas\\home\\Memex\\Photos",
+      "expected": { "path": "\\\\nas\\home\\Memex\\Photos", "kind": "network", "provider": null, "root": "\\\\nas\\home", "evidence": "unc" }
+    },
+    {
+      "name": "windows network share with forward slashes",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "//nas/home/Memex",
+      "expected": { "path": "\\\\nas\\home\\Memex", "kind": "network", "provider": null, "root": "\\\\nas\\home", "evidence": "unc" }
+    },
+    {
+      "name": "windows network share as a long UNC path",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "\\\\?\\UNC\\nas\\home\\Memex",
+      "expected": { "path": "\\\\?\\UNC\\nas\\home\\Memex", "kind": "network", "provider": null, "root": "\\\\nas\\home", "evidence": "unc" }
+    },
+    {
+      "name": "windows mapped network drive, found by its real path",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "Z:\\Memex\\Photos",
+      "realpath": { "Z:\\Memex": "\\\\nas\\home\\Memex" },
+      "expected": { "path": "Z:\\Memex\\Photos", "kind": "network", "provider": null, "root": "Z:\\", "evidence": "realpath" }
+    },
+    {
+      "name": "windows MSIX package folder",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+      "path": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Local\\Memex\\Study",
+      "expected": { "path": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Local\\Memex\\Study", "kind": "virtualized", "provider": "MSIX", "root": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe", "evidence": "msix-package" }
+    },
+    {
+      "name": "windows LOCALAPPDATA redirected while the app runs as an MSIX package",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+      "msixPackageFamily": "Memex.Study_8wekyb3d8bbwe",
+      "path": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache",
+      "expected": { "path": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache", "kind": "virtualized", "provider": "MSIX", "root": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Local", "evidence": "msix-redirect" }
+    },
+    {
+      "name": "windows APPDATA redirected while the app runs as an MSIX package",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local", "APPDATA": "C:\\Users\\ada\\AppData\\Roaming" },
+      "msixPackageFamily": "Memex.Study_8wekyb3d8bbwe",
+      "path": "C:\\Users\\ada\\AppData\\Roaming\\Memex.Study",
+      "expected": { "path": "C:\\Users\\ada\\AppData\\Roaming\\Memex.Study", "kind": "virtualized", "provider": "MSIX", "root": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Roaming", "evidence": "msix-redirect" }
+    },
+    {
+      "name": "windows ~/Memex is not redirected in an MSIX package",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" },
+      "msixPackageFamily": "Memex.Study_8wekyb3d8bbwe",
+      "path": "C:\\Users\\ada\\Memex\\Study",
+      "expected": { "path": "C:\\Users\\ada\\Memex\\Study", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "windows relative path",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "Memex\\Photos",
+      "error": "relative-path"
+    },
+    {
+      "name": "windows path rooted without a drive",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "path": "\\Memex\\Photos",
+      "error": "relative-path"
+    },
+    {
+      "name": "macos local folder",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Memex/Photos",
+      "expected": { "path": "/Users/ada/Memex/Photos", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "macos CloudStorage OneDrive",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Library/CloudStorage/OneDrive-Personal/Memex/Photos",
+      "expected": { "path": "/Users/ada/Library/CloudStorage/OneDrive-Personal/Memex/Photos", "kind": "sync", "provider": "OneDrive", "root": "/Users/ada/Library/CloudStorage/OneDrive-Personal", "evidence": "cloud-storage" }
+    },
+    {
+      "name": "macos CloudStorage Google Drive comes before the My Drive segment",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Library/CloudStorage/GoogleDrive-ada@example.com/My Drive/Memex",
+      "expected": { "path": "/Users/ada/Library/CloudStorage/GoogleDrive-ada@example.com/My Drive/Memex", "kind": "sync", "provider": "Google Drive", "root": "/Users/ada/Library/CloudStorage/GoogleDrive-ada@example.com", "evidence": "cloud-storage" }
+    },
+    {
+      "name": "macos CloudStorage Proton Drive",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Library/CloudStorage/ProtonDrive-ada@example.com-folder/Memex/Health",
+      "expected": { "path": "/Users/ada/Library/CloudStorage/ProtonDrive-ada@example.com-folder/Memex/Health", "kind": "sync", "provider": "Proton Drive", "root": "/Users/ada/Library/CloudStorage/ProtonDrive-ada@example.com-folder", "evidence": "cloud-storage" }
+    },
+    {
+      "name": "macos CloudStorage provider that is not in the list keeps its name up to the first dash",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Library/CloudStorage/SomeCloud-ada/Memex",
+      "expected": { "path": "/Users/ada/Library/CloudStorage/SomeCloud-ada/Memex", "kind": "sync", "provider": "SomeCloud", "root": "/Users/ada/Library/CloudStorage/SomeCloud-ada", "evidence": "cloud-storage" }
+    },
+    {
+      "name": "macos iCloud Drive",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study",
+      "expected": { "path": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study", "kind": "sync", "provider": "iCloud Drive", "root": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs", "evidence": "segment" }
+    },
+    {
+      "name": "macos Documents in iCloud Drive, found by the real path",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Documents/Memex",
+      "realpath": { "/Users/ada/Documents/Memex": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Documents/Memex" },
+      "expected": { "path": "/Users/ada/Documents/Memex", "kind": "sync", "provider": "iCloud Drive", "root": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs", "evidence": "segment" }
+    },
+    {
+      "name": "macos Syncthing",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Sync/Memex",
+      "exists": ["/Users/ada/Sync/.stfolder"],
+      "expected": { "path": "/Users/ada/Sync/Memex", "kind": "sync", "provider": "Syncthing", "root": "/Users/ada/Sync", "evidence": "marker" }
+    },
+    {
+      "name": "macos Dropbox settings folder ~/.dropbox is not a marker",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Users/ada/Memex/Photos",
+      "exists": ["/Users/ada/.dropbox"],
+      "expected": { "path": "/Users/ada/Memex/Photos", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "macos external drive",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Volumes/Backup/Memex/Photos",
+      "expected": { "path": "/Volumes/Backup/Memex/Photos", "kind": "removable", "provider": null, "root": "/Volumes/Backup", "evidence": "mount-path" }
+    },
+    {
+      "name": "macos start-up disk under /Volumes resolves to /",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Volumes/Macintosh HD/Users/ada/Memex",
+      "realpath": { "/Volumes/Macintosh HD/Users/ada/Memex": "/Users/ada/Memex" },
+      "expected": { "path": "/Volumes/Macintosh HD/Users/ada/Memex", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "macos network share under /Network",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "path": "/Network/Servers/nas/home/Memex",
+      "expected": { "path": "/Network/Servers/nas/home/Memex", "kind": "network", "provider": null, "root": "/Network/Servers/nas", "evidence": "mount-path" }
+    },
+    {
+      "name": "linux local folder with a mount table",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/Memex/User",
+      "mounts": "/dev/nvme0n1p2 / ext4 rw,relatime 0 0\nnas:/export /mnt/nas nfs4 rw 0 0\n",
+      "expected": { "path": "/home/ada/Memex/User", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "linux Nextcloud, compared without case",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/nextcloud/Memex",
+      "expected": { "path": "/home/ada/nextcloud/Memex", "kind": "sync", "provider": "Nextcloud", "root": "/home/ada/nextcloud", "evidence": "segment" }
+    },
+    {
+      "name": "linux Dropbox",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/Dropbox/Memex/Finance",
+      "expected": { "path": "/home/ada/Dropbox/Memex/Finance", "kind": "sync", "provider": "Dropbox", "root": "/home/ada/Dropbox", "evidence": "segment" }
+    },
+    {
+      "name": "linux Syncthing marker in the folder itself",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/Memex",
+      "exists": ["/home/ada/Memex/.stfolder"],
+      "expected": { "path": "/home/ada/Memex", "kind": "sync", "provider": "Syncthing", "root": "/home/ada/Memex", "evidence": "marker" }
+    },
+    {
+      "name": "linux NFS share from the mount table",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/mnt/nas/Memex/Photos",
+      "mounts": "/dev/nvme0n1p2 / ext4 rw,relatime 0 0\nnas:/export /mnt/nas nfs4 rw 0 0\n",
+      "expected": { "path": "/mnt/nas/Memex/Photos", "kind": "network", "provider": null, "root": "/mnt/nas", "evidence": "mount-table" }
+    },
+    {
+      "name": "linux Dropbox settings folder ~/.dropbox is not a marker",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/Memex/Photos",
+      "exists": ["/home/ada/.dropbox"],
+      "expected": { "path": "/home/ada/Memex/Photos", "kind": "local", "provider": null, "root": null, "evidence": "none" }
+    },
+    {
+      "name": "linux Dropbox in a folder with another name, found by its .dropbox file",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/home/ada/Shared/Memex/Study",
+      "exists": ["/home/ada/.dropbox"],
+      "files": ["/home/ada/Shared/.dropbox"],
+      "expected": { "path": "/home/ada/Shared/Memex/Study", "kind": "sync", "provider": "Dropbox", "root": "/home/ada/Shared", "evidence": "marker" }
+    },
+    {
+      "name": "linux NFS share mounted by autofs: the later mount at the same point wins",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/mnt/nas/Memex/Photos",
+      "mounts": "/dev/nvme0n1p2 / ext4 rw,relatime 0 0\nsystemd-1 /mnt/nas autofs rw,relatime,fd=52,pgrp=1,timeout=0,minproto=5,maxproto=5,direct 0 0\nnas:/export /mnt/nas nfs4 rw 0 0\n",
+      "expected": { "path": "/mnt/nas/Memex/Photos", "kind": "network", "provider": null, "root": "/mnt/nas", "evidence": "mount-table" }
+    },
+    {
+      "name": "linux CIFS share with a space in the mount point",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/mnt/my share/Memex",
+      "mounts": "/dev/sda1 / ext4 rw 0 0\n//nas/share /mnt/my\\040share cifs rw 0 0\n",
+      "expected": { "path": "/mnt/my share/Memex", "kind": "network", "provider": null, "root": "/mnt/my share", "evidence": "mount-table" }
+    },
+    {
+      "name": "linux removable drive under /media",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/media/ada/USBSTICK/Memex",
+      "expected": { "path": "/media/ada/USBSTICK/Memex", "kind": "removable", "provider": null, "root": "/media/ada/USBSTICK", "evidence": "mount-path" }
+    },
+    {
+      "name": "linux removable drive under /run/media",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "/run/media/ada/My Disk/Memex",
+      "expected": { "path": "/run/media/ada/My Disk/Memex", "kind": "removable", "provider": null, "root": "/run/media/ada/My Disk", "evidence": "mount-path" }
+    },
+    {
+      "name": "linux relative path",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "path": "Memex/Photos",
+      "error": "relative-path"
+    }
+  ]
+}

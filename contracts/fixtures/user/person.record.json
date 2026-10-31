@@ -1,0 +1,32 @@
+{
+  "id": "person_4c1029697ee358715d3a14a2add817c4",
+  "kind": "person",
+  "version": 2,
+  "state": "active",
+  "origin": "inferred",
+  "confidence": 1,
+  "review": false,
+  "fields": {
+    "name": "Alex Example",
+    "role": "owner",
+    "contact": { "app": "contacts", "kind": "person", "id": "ct_alex" }
+  },
+  "provenance": {
+    "name": [{ "scope": "contacts.persons", "key": "ct_alex" }],
+    "role": [{ "scope": "contacts.persons", "key": "ct_alex" }],
+    "contact": [{ "scope": "contacts.persons", "key": "ct_alex" }]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "contacts.persons",
+      "key": "ct_alex",
+      "confidence": 1,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [{ "app": "contacts", "kind": "person", "id": "ct_alex" }],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-16T10:05:00Z"
+}

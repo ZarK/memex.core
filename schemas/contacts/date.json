@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/date.json",
+  "title": "Date fields",
+  "description": "A date of the person, for example a birthday. An anniversary or a first meeting can name the other person of the record.",
+  "type": "object",
+  "required": ["type", "date"],
+  "properties": {
+    "type": { "enum": ["birthday", "anniversary", "memorial", "firstMet", "other"] },
+    "date": {
+      "type": "string",
+      "pattern": "^([0-9]{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|--(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$",
+      "description": "YYYY, YYYY-MM, YYYY-MM-DD, or --MM-DD when the year is unknown."
+    },
+    "label": { "$ref": "../user/common.json#/$defs/text" }
+  },
+  "additionalProperties": false
+}

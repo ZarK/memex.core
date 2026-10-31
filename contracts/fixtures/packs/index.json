@@ -1,0 +1,9 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "pack-e5-small.json": "schemas/packs/pack.json",
+    "pack-memex-made.json": "schemas/packs/pack.json",
+    "store.json": "schemas/packs/store.json",
+    "acceptances.json": "schemas/packs/acceptances.json"
+  }
+}

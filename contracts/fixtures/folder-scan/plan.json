@@ -1,0 +1,111 @@
+{
+  "description": "plan(scanFolder(listFolder(tree at root), journal), { location }). location is passed to describeLocation() of contracts/storage.md. nowMs 1800000000000; file times default to 1700000000000. expected.providers lists [provider, root, files, bytes].",
+  "cases": [
+    {
+      "name": "macOS CloudStorage: dataless files are counted for Proton Drive; a local file needs no download",
+      "root": "/Users/ada/Library/CloudStorage/ProtonDrive-ada@example.com/Photos",
+      "location": { "platform": "darwin", "env": {}, "home": "/Users/ada" },
+      "tree": { "platform": "darwin", "fileSystem": "apfs", "ignoresCase": true, "folders": { "": [
+        { "name": "a.heic", "size": 1500000000, "flags": 1073741824 },
+        { "name": "b.heic", "size": 500000000, "flags": 1073741824 },
+        { "name": "c.heic", "size": 1000 },
+        { "name": "known.heic", "size": 7, "flags": 1073741824 }
+      ] } },
+      "journal": [{ "id": "e1", "path": "known.heic", "size": 7, "modifiedMs": 1700000000000, "availability": "online-only" }],
+      "expected": {
+        "read": { "files": 3, "bytes": 2000001000 },
+        "local": { "files": 1, "bytes": 1000 },
+        "onlineOnly": { "files": 2, "bytes": 2000000000, "unknownSizeFiles": 0 },
+        "providers": [["Proton Drive", "/Users/ada/Library/CloudStorage/ProtonDrive-ada@example.com", 2, 2000000000]],
+        "needsConfirmation": true,
+        "text": "2 files, 2 GB, from Proton Drive"
+      }
+    },
+    {
+      "name": "Windows: online-only files in two sync folders below the root, largest first",
+      "root": "C:\\Users\\ada",
+      "location": { "platform": "win32", "env": {}, "home": "C:\\Users\\ada" },
+      "tree": { "platform": "win32", "fileSystem": "ntfs", "ignoresCase": true, "folders": {
+        "": [{ "name": "Dropbox", "type": "folder" }, { "name": "OneDrive", "type": "folder" }, { "name": "notes.txt", "size": 50 }],
+        "Dropbox": [{ "name": "scan.pdf", "size": 40000000, "attributes": 4128 }],
+        "OneDrive": [
+          { "name": "1.mov", "size": 2000000000, "attributes": 4200992 },
+          { "name": "2.mov", "size": 1000000000, "attributes": 4200992 }
+        ]
+      } },
+      "journal": [],
+      "expected": {
+        "read": { "files": 4, "bytes": 3040000050 },
+        "local": { "files": 1, "bytes": 50 },
+        "onlineOnly": { "files": 3, "bytes": 3040000000, "unknownSizeFiles": 0 },
+        "providers": [["OneDrive", "C:\\Users\\ada\\OneDrive", 2, 3000000000], ["Dropbox", "C:\\Users\\ada\\Dropbox", 1, 40000000]],
+        "needsConfirmation": true,
+        "text": "2 files, 3 GB, from OneDrive; 1 file, 40 MB, from Dropbox"
+      }
+    },
+    {
+      "name": "iCloud stubs have no known size: the text says at least",
+      "root": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Scans",
+      "location": { "platform": "darwin", "env": {}, "home": "/Users/ada" },
+      "tree": { "platform": "darwin", "fileSystem": "apfs", "ignoresCase": true, "folders": { "": [
+        { "name": ".a.pdf.icloud", "size": 190 },
+        { "name": "b.pdf", "size": 2000000, "flags": 1073741824 }
+      ] } },
+      "journal": [],
+      "expected": {
+        "read": { "files": 2, "bytes": 2000000 },
+        "local": { "files": 0, "bytes": 0 },
+        "onlineOnly": { "files": 2, "bytes": 2000000, "unknownSizeFiles": 1 },
+        "providers": [["iCloud Drive", "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs", 2, 2000000]],
+        "needsConfirmation": true,
+        "text": "2 files, at least 2 MB, from iCloud Drive"
+      }
+    },
+    {
+      "name": "nothing online-only: no confirmation",
+      "root": "/home/ada/Pictures",
+      "location": { "platform": "linux", "env": {}, "home": "/home/ada" },
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 10 }] } },
+      "journal": [],
+      "expected": {
+        "read": { "files": 1, "bytes": 10 },
+        "local": { "files": 1, "bytes": 10 },
+        "onlineOnly": { "files": 0, "bytes": 0, "unknownSizeFiles": 0 },
+        "providers": [],
+        "needsConfirmation": false,
+        "text": null
+      }
+    },
+    {
+      "name": "online-only files outside a known sync client name the scanned folder",
+      "root": "/srv/archive",
+      "location": { "platform": "linux", "env": {}, "home": "/home/ada" },
+      "tree": { "folders": { "": [{ "name": "tape.tar", "size": 10000000, "attributes": 4096 }] } },
+      "journal": [],
+      "expected": {
+        "read": { "files": 1, "bytes": 10000000 },
+        "local": { "files": 0, "bytes": 0 },
+        "onlineOnly": { "files": 1, "bytes": 10000000, "unknownSizeFiles": 0 },
+        "providers": [[null, "/srv/archive", 1, 10000000]],
+        "needsConfirmation": true,
+        "text": "1 file, 10 MB, from /srv/archive"
+      }
+    },
+    {
+      "name": "settling files are left for a later scan and are not in the plan",
+      "root": "/home/ada/Pictures",
+      "location": { "platform": "linux", "env": {}, "home": "/home/ada" },
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 10, "modifiedMs": 1799999995000 }, { "name": "b.jpg", "size": 20 }] } },
+      "journal": [],
+      "expected": {
+        "read": { "files": 1, "bytes": 20 },
+        "local": { "files": 1, "bytes": 20 },
+        "onlineOnly": { "files": 0, "bytes": 0, "unknownSizeFiles": 0 },
+        "settling": { "files": 1, "bytes": 10 },
+        "providers": [],
+        "needsConfirmation": false,
+        "text": null
+      }
+    }
+  ]
+}

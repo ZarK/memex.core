@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.cache/
+packages/desktop/examples/*/build/
+packages/desktop/examples/*/release/
+packages/desktop/examples/*/release-two/
+packages/desktop/examples/*/proof/
+
+# Manifest backups left by an interrupted release check or stage run
+*.publish-backup

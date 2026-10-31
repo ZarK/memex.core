@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/circle.json",
+  "title": "Circle fields",
+  "description": "The person belongs to a named circle, for example family or the climbing crew. Circles gate views, not permissions.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": { "$ref": "../user/common.json#/$defs/text" },
+    "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "to": { "$ref": "../user/common.json#/$defs/partialDate" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/packs/acceptances.json",
+  "title": "License acceptances (memex.acceptances/1)",
+  "description": "~/Memex/Node/acceptances.json: the license texts that the user accepted. See contracts/packs.md.",
+  "type": "object",
+  "required": ["format", "acceptances"],
+  "properties": {
+    "format": { "const": "memex.acceptances/1" },
+    "acceptances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pack", "version", "textSha256", "acceptedAt", "app"],
+        "properties": {
+          "pack": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+          "version": { "type": "string", "description": "The version the user saw when they accepted. The acceptance covers every version with the same text hash." },
+          "textSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "acceptedAt": { "type": "string", "format": "date-time" },
+          "app": { "type": "string", "pattern": "^[a-z][a-z0-9]*$", "description": "The app in which the user accepted." }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/person.json",
+  "title": "Person fields",
+  "description": "A person in Contacts: who they are. Details over time are records of the other kinds.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": { "$ref": "../user/common.json#/$defs/text" },
+    "otherNames": {
+      "type": "array",
+      "items": { "$ref": "../user/common.json#/$defs/text" },
+      "uniqueItems": true
+    },
+    "type": { "enum": ["person", "organization", "unknown"] }
+  },
+  "additionalProperties": false
+}

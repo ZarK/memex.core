@@ -1,0 +1,11 @@
+{
+  "format": "memex.packs/1",
+  "packs": {
+    "multilingual-e5-small": {
+      "version": "2024-02-08",
+      "digest": "583387b18a62de36e6090ef373fb915a49a12469131d356cc4e45c6f92b2fcf6",
+      "folder": "multilingual-e5-small/2024-02-08-583387b1",
+      "activatedAt": "2026-11-03T09:12:00Z"
+    }
+  }
+}

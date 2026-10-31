@@ -1,0 +1,9 @@
+{
+  "app": "photos",
+  "function": "photos.food-reading",
+  "batchKey": "import-2026-11-16",
+  "input": {
+    "images": [{ "base64": "/9j/4AAQSkZJRgABAQ==", "mediaType": "image/jpeg" }],
+    "takenAt": "2026-11-16T16:42:00Z"
+  }
+}

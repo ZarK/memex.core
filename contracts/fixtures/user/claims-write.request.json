@@ -1,0 +1,50 @@
+{
+  "scope": "photos.trips",
+  "claims": [
+    {
+      "key": "trip-1842",
+      "kind": "trip",
+      "confidence": 0.92,
+      "method": "rule:trip-nearness/2",
+      "generation": 12,
+      "seen": { "first": "2025-05-02T08:14:00Z", "last": "2025-05-08T19:30:00Z" },
+      "fields": {
+        "title": "Lisbon",
+        "firstDay": "2025-05-02",
+        "lastDay": "2025-05-08",
+        "destinations": [
+          {
+            "name": "Lisbon",
+            "town": "Lisbon",
+            "country": "PT",
+            "location": { "lat": 38.7223, "lon": -9.1393, "radiusM": 8000 }
+          }
+        ],
+        "countries": ["PT"],
+        "participants": [
+          { "app": "contacts", "kind": "person", "id": "ct_alex" },
+          { "app": "contacts", "kind": "person", "id": "ct_sam" }
+        ],
+        "home": "home_4ea140588150773ce3aace786aeef7f4"
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip-1842" }]
+    },
+    {
+      "key": "trip-1907",
+      "kind": "trip",
+      "confidence": 0.41,
+      "method": "rule:trip-nearness/2",
+      "generation": 12,
+      "seen": { "first": "2025-02-14T10:02:00Z", "last": "2025-02-16T15:47:00Z" },
+      "fields": {
+        "title": "Lisbon",
+        "firstDay": "2025-02-14",
+        "lastDay": "2025-02-16",
+        "destinations": [{ "name": "Lisbon", "country": "PT" }],
+        "countries": ["PT"]
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip-1907" }]
+    }
+  ],
+  "idempotencyKey": "photos-trips-2026-11-18T09:00:00Z"
+}

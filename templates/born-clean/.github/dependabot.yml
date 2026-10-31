@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # The same 14-day age as .npmrc and pnpm-workspace.yaml. The Memex packages are exempt.
+    cooldown:
+      default-days: 14
+      exclude:
+        - "@tjalve/*"
+    # The Node types follow the oldest Node the program supports (engines), not the newest Node.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # The memex.core reusable workflow is exempt, so a fix there reaches the repository at once.
+    cooldown:
+      default-days: 14
+      exclude:
+        - "ZarK/memex.core"
+    open-pull-requests-limit: 5

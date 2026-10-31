@@ -1,0 +1,48 @@
+{
+  "name": "@tjalve/memex-archive",
+  "version": "0.2.1",
+  "description": "The Memex archive: zip packs, the source index, database snapshots, closed writes, status files, run locks, and the memex-archive CLI",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/archive"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/archive#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "memex-archive": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@tjalve/memex-storage": "workspace:*",
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

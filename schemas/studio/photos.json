@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/studio/photos.json",
+  "title": "Studio photo tools (studio.photos.*)",
+  "description": "Inputs and outputs of studio.photos.status, submit, get, and cancel. See contracts/studio-photos.md.",
+  "$defs": {
+    "tool": { "enum": ["edit", "expand", "relight", "face-restore", "animate"] },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "ref": {
+      "type": "object",
+      "required": ["app", "kind", "id"],
+      "properties": {
+        "app": { "type": "string" },
+        "kind": { "type": "string" },
+        "id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "object",
+      "required": ["ready", "version", "tools"],
+      "properties": {
+        "ready": { "type": "boolean" },
+        "version": { "type": "string" },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tool", "ready"],
+            "properties": {
+              "tool": { "$ref": "#/$defs/tool" },
+              "ready": { "type": "boolean" },
+              "reason": {
+                "enum": [
+                  "comfyui_not_configured", "comfyui_unreachable", "models_missing", "nodes_missing",
+                  "gpu_too_small"
+                ]
+              },
+              "missing": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "submit": {
+      "type": "object",
+      "required": ["tool", "imageUploadId", "quality", "source", "params"],
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool" },
+        "imageUploadId": { "type": "string" },
+        "quality": { "enum": ["preview", "final"] },
+        "seed": { "type": "integer", "minimum": 0 },
+        "source": { "$ref": "#/$defs/ref" },
+        "params": { "type": "object" },
+        "dryRun": { "type": "boolean" },
+        "idempotencyKey": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "tool": { "const": "edit" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/editParams" } } }
+        },
+        {
+          "if": { "properties": { "tool": { "const": "expand" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/expandParams" } } }
+        },
+        {
+          "if": { "properties": { "tool": { "const": "relight" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/relightParams" } } }
+        },
+        {
+          "if": { "properties": { "tool": { "const": "face-restore" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/faceRestoreParams" } } }
+        },
+        {
+          "if": { "properties": { "tool": { "const": "animate" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/animateParams" } } }
+        }
+      ]
+    },
+    "editParams": {
+      "type": "object",
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "maskUploadId": { "type": "string" },
+        "strength": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.6 }
+      },
+      "additionalProperties": false
+    },
+    "expandParams": {
+      "type": "object",
+      "required": ["margins"],
+      "properties": {
+        "margins": {
+          "type": "object",
+          "required": ["left", "top", "right", "bottom"],
+          "properties": {
+            "left": { "type": "integer", "minimum": 0 },
+            "top": { "type": "integer", "minimum": 0 },
+            "right": { "type": "integer", "minimum": 0 },
+            "bottom": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "prompt": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "relightParams": {
+      "type": "object",
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "direction": { "enum": ["left", "right", "top", "bottom", "front", "back"] }
+      },
+      "additionalProperties": false
+    },
+    "faceRestoreParams": {
+      "type": "object",
+      "properties": { "fidelity": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 } },
+      "additionalProperties": false
+    },
+    "animateParams": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "seconds": { "type": "number", "minimum": 2, "maximum": 10, "default": 5 }
+      },
+      "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "required": ["name", "state", "mediaType"],
+      "properties": {
+        "name": { "type": "string" },
+        "state": { "enum": ["ready", "withheld"] },
+        "reason": { "enum": ["sensitivity_check", "checker_missing"] },
+        "url": { "type": "string", "pattern": "^/api/v1/files/" },
+        "mediaType": { "type": "string" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "seconds": { "type": "number", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "ready" } } },
+          "then": { "required": ["url", "bytes", "sha256"] }
+        },
+        {
+          "if": { "properties": { "state": { "const": "withheld" } } },
+          "then": { "required": ["reason"], "not": { "required": ["url"] } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "recipe": {
+      "type": "object",
+      "required": [
+        "tool", "params", "seed", "quality", "workflow", "models", "studio", "source", "input",
+        "output", "enlarged"
+      ],
+      "properties": {
+        "tool": { "$ref": "#/$defs/tool" },
+        "params": { "type": "object" },
+        "seed": { "type": "integer", "minimum": 0 },
+        "quality": { "enum": ["preview", "final"] },
+        "workflow": {
+          "type": "object",
+          "required": ["id", "version"],
+          "properties": { "id": { "type": "string" }, "version": { "type": "string" } },
+          "additionalProperties": false
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": { "name": { "type": "string" }, "sha256": { "$ref": "#/$defs/sha256" } },
+            "additionalProperties": false
+          }
+        },
+        "studio": { "type": "string" },
+        "source": { "$ref": "#/$defs/ref" },
+        "input": {
+          "type": "object",
+          "required": ["sha256", "width", "height"],
+          "properties": {
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "width": { "type": "integer" },
+            "height": { "type": "integer" }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer" },
+            "height": { "type": "integer" },
+            "seconds": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "enlarged": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "job": {
+      "type": "object",
+      "required": [
+        "id", "tool", "state", "progress", "createdAt", "finishedAt", "outputs", "recipe", "error"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "tool": { "$ref": "#/$defs/tool" },
+        "state": { "enum": ["queued", "running", "succeeded", "failed", "cancelled"] },
+        "progress": {
+          "type": ["object", "null"],
+          "properties": {
+            "percent": { "type": "number", "minimum": 0, "maximum": 100 },
+            "step": { "type": "string" },
+            "previewUrl": { "type": "string", "pattern": "^/api/v1/files/" }
+          },
+          "additionalProperties": false
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/output" } },
+        "recipe": { "oneOf": [{ "$ref": "#/$defs/recipe" }, { "type": "null" }] },
+        "error": { "oneOf": [{ "type": "null" }, { "$ref": "../surfaces/error.json" }] }
+      },
+      "additionalProperties": false
+    },
+    "jobEnvelope": {
+      "type": "object",
+      "required": ["job"],
+      "properties": { "job": { "$ref": "#/$defs/job" } },
+      "additionalProperties": false
+    }
+  }
+}

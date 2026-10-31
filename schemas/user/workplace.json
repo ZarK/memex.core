@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/workplace.json",
+  "title": "Workplace fields",
+  "description": "Where the owner works or studies: its sites, and the owner's stints there.",
+  "type": "object",
+  "required": ["name", "type"],
+  "properties": {
+    "name": { "$ref": "common.json#/$defs/text" },
+    "type": { "enum": ["employer", "client", "own", "school"] },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["location"],
+        "properties": {
+          "location": { "$ref": "common.json#/$defs/location" },
+          "label": { "$ref": "common.json#/$defs/text" },
+          "type": { "enum": ["office", "cabin", "other"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stints": {
+      "type": "array",
+      "description": "The owner's periods at the workplace. Other people's stints are in Memex.Contacts.",
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "from": { "$ref": "common.json#/$defs/partialDate" },
+          "to": { "$ref": "common.json#/$defs/partialDate" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

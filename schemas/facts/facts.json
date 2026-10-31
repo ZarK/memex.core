@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/facts/facts.json",
+  "title": "Shared facts definitions",
+  "description": "The shapes that Memex.User and Memex.Contacts share, from @tjalve/memex-facts. See contracts/facts.md.",
+  "$defs": {
+    "seen": {
+      "type": "object",
+      "required": ["first", "last"],
+      "properties": {
+        "first": { "$ref": "../user/common.json#/$defs/utcTime" },
+        "last": { "$ref": "../user/common.json#/$defs/utcTime" }
+      },
+      "additionalProperties": false,
+      "description": "When the evidence was observed: the first and the last time. It says nothing about when the fact was true."
+    },
+    "method": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200,
+      "pattern": "^[a-z][a-z0-9-]*:\\S+$",
+      "description": "The rule or model and its version, for example rule:trip-nearness/2 or card:vcard/1."
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Goes up with each run of the producer. A hub refuses a write with a lower generation than the last one of the scope or partition."
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*\\.[a-z]+$",
+      "description": "<app>.<kinds>. Each hub limits the kinds."
+    },
+    "claimRef": {
+      "type": "object",
+      "required": ["scope", "key"],
+      "properties": {
+        "scope": { "$ref": "#/$defs/scope" },
+        "partition": { "$ref": "../user/common.json#/$defs/partition" },
+        "key": { "$ref": "../user/common.json#/$defs/claimKey" }
+      },
+      "additionalProperties": false,
+      "description": "One claim of a producer."
+    },
+    "correctionRef": {
+      "type": "object",
+      "required": ["correction"],
+      "properties": { "correction": { "$ref": "../user/common.json#/$defs/correctionId" } },
+      "additionalProperties": false,
+      "description": "One correction of the person."
+    },
+    "origin": {
+      "description": "What gave a value: a claim, or a correction.",
+      "oneOf": [{ "$ref": "#/$defs/claimRef" }, { "$ref": "#/$defs/correctionRef" }]
+    },
+    "fieldPath": {
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9]*(/[0-9]+)?$",
+      "description": "A field name, or <field>/<index> for one element of a list field."
+    },
+    "provenance": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/fieldPath" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#/$defs/origin" }
+      },
+      "description": "For each field, and each element of a list field, the claims or the correction that gave it."
+    },
+    "alternative": {
+      "type": "object",
+      "required": ["value", "from", "reason"],
+      "properties": {
+        "value": { "description": "The value that the record does not show." },
+        "from": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/origin" } },
+        "reason": {
+          "enum": ["weaker", "coarser", "conflict", "suggested-end"],
+          "description": "weaker: a stronger claim or a correction won. coarser: the bound of a claim at a coarser precision. conflict: partial dates that do not refine each other. suggested-end: an end that a later record in another town suggests; the engine never sets it."
+        }
+      },
+      "additionalProperties": false
+    },
+    "alternatives": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/fieldPath" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#/$defs/alternative" }
+      },
+      "description": "For each field, the values that lost. They stay, so that a reader or the person can choose one."
+    },
+    "reviewReason": {
+      "enum": ["low-confidence", "conflict", "suggested-end", "gap", "possible-duplicate"],
+      "description": "Why a record is on the quiet review list."
+    },
+    "listEdit": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "add": { "type": "array", "minItems": 1 },
+        "remove": { "type": "array", "minItems": 1 }
+      },
+      "additionalProperties": false,
+      "description": "The value of a list field in a set correction that edits the list instead of replacing it. Claims can still add elements; a removed element does not come back."
+    },
+    "heldReason": {
+      "enum": [
+        "required-field", "record-rejected", "record-removed", "unknown-record", "not-merged"
+      ],
+      "description": "Why a hub stored a correction and did not apply it. not-merged is for Memex.Contacts only."
+    }
+  }
+}

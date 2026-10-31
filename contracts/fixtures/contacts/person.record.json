@@ -1,0 +1,46 @@
+{
+  "id": "person_bb472edb86809a761936d90c70aeb434",
+  "kind": "person",
+  "version": 3,
+  "state": "active",
+  "origin": "inferred",
+  "confidence": 1,
+  "review": false,
+  "fields": { "name": "Jon Example", "otherNames": ["Jonny"], "type": "person" },
+  "provenance": {
+    "name": [
+      { "scope": "contacts.persons", "key": "card_f8bd9d9b97259addc818793929b06c90" },
+      { "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+    ],
+    "otherNames": [{ "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }],
+    "otherNames/0": [
+      { "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+    ],
+    "type": [
+      { "scope": "contacts.persons", "key": "card_f8bd9d9b97259addc818793929b06c90" },
+      { "scope": "contacts.persons", "key": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "contacts.persons",
+      "key": "card_f8bd9d9b97259addc818793929b06c90",
+      "confidence": 1,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    },
+    {
+      "scope": "contacts.persons",
+      "key": "card_89548698ab5ef8c33b1bf5e6f011405f",
+      "confidence": 1,
+      "seen": { "first": "2024-01-10T12:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [
+    { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" },
+    { "app": "contacts", "kind": "card", "id": "card_89548698ab5ef8c33b1bf5e6f011405f" }
+  ],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-21T11:00:00Z"
+}

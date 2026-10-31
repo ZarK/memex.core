@@ -1,0 +1,100 @@
+{
+  "changeId": "chg_158fa54cf373d1ccfa292a050180ef18",
+  "summary": "5 corrections stored.",
+  "corrections": [
+    {
+      "id": "cor_d0f631ca1ddba8db3bcfcb9e057cdc98",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": { "title": "Lisbon with Sam" },
+      "app": "photos",
+      "createdAt": "2026-11-20T17:40:02Z"
+    },
+    {
+      "id": "cor_9c0abe51c6e6655d81de2d044d4fb194",
+      "op": "reject",
+      "record": "trip_9cabab35b4b615729dfde9c5214f82bc",
+      "app": "photos",
+      "createdAt": "2026-11-20T17:40:31Z"
+    },
+    {
+      "id": "cor_7c1c97df17c066924822b0af09a65251",
+      "op": "create",
+      "kind": "milestone",
+      "record": "milestone_7f7f85b1e7d5ffd45265405b7236de39",
+      "fields": { "title": "Moved to Bergen", "date": "2019-08" },
+      "app": "workspace",
+      "createdAt": "2026-11-20T17:41:15Z"
+    },
+    {
+      "id": "cor_0012a3fa000c5dc26ee658c3c58e12ce",
+      "op": "set",
+      "record": "person_4c1029697ee358715d3a14a2add817c4",
+      "fields": { "contact": { "app": "contacts", "kind": "person", "id": "ct_alex" } },
+      "app": "photos",
+      "createdAt": "2026-11-20T17:41:48Z"
+    },
+    {
+      "id": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946",
+      "op": "create",
+      "kind": "home",
+      "record": "home_4ea140588150773ce3aace786aeef7f4",
+      "fields": {
+        "type": "home",
+        "label": "Bergen flat",
+        "location": { "lat": 60.3913, "lon": 5.3221, "radiusM": 60 },
+        "town": "Bergen",
+        "country": "NO",
+        "from": "2019-08",
+        "members": [{ "person": "person_4c1029697ee358715d3a14a2add817c4", "from": "2019-08" }]
+      },
+      "sources": [
+        { "app": "photos", "kind": "home", "id": "home_9d27c1e0b4a35f68e2c17d0a4b6f8e13" }
+      ],
+      "app": "photos",
+      "createdAt": "2026-11-20T17:42:10Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_d0f631ca1ddba8db3bcfcb9e057cdc98",
+      "status": "applied",
+      "repeat": false,
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "version": 5,
+      "state": "active"
+    },
+    {
+      "id": "cor_9c0abe51c6e6655d81de2d044d4fb194",
+      "status": "applied",
+      "repeat": false,
+      "record": "trip_9cabab35b4b615729dfde9c5214f82bc",
+      "version": 3,
+      "state": "rejected"
+    },
+    {
+      "id": "cor_7c1c97df17c066924822b0af09a65251",
+      "status": "applied",
+      "repeat": false,
+      "record": "milestone_7f7f85b1e7d5ffd45265405b7236de39",
+      "version": 1,
+      "state": "active"
+    },
+    {
+      "id": "cor_0012a3fa000c5dc26ee658c3c58e12ce",
+      "status": "applied",
+      "repeat": false,
+      "record": "person_4c1029697ee358715d3a14a2add817c4",
+      "version": 2,
+      "state": "active"
+    },
+    {
+      "id": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946",
+      "status": "applied",
+      "repeat": false,
+      "record": "home_4ea140588150773ce3aace786aeef7f4",
+      "version": 1,
+      "state": "active"
+    }
+  ]
+}

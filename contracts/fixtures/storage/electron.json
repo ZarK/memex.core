@@ -1,0 +1,42 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "electronPaths() cases: the memexPaths() input, and the folders an Electron app sets before it is ready.",
+  "cases": [
+    {
+      "name": "windows",
+      "input": { "app": "study", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "C:\\Users\\ada\\AppData\\Local" } },
+      "expected": {
+        "data": "C:\\Users\\ada\\Memex\\Study",
+        "userData": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\State\\Electron",
+        "sessionData": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\State\\Electron",
+        "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Logs",
+        "crashDumps": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Logs\\Crashes",
+        "diskCache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache\\Chromium"
+      }
+    },
+    {
+      "name": "macos",
+      "input": { "app": "finance", "platform": "darwin", "home": "/Users/ada", "env": {} },
+      "expected": {
+        "data": "/Users/ada/Memex/Finance",
+        "userData": "/Users/ada/Library/Application Support/Memex/Finance/Electron",
+        "sessionData": "/Users/ada/Library/Application Support/Memex/Finance/Electron",
+        "logs": "/Users/ada/Library/Logs/Memex/Finance",
+        "crashDumps": "/Users/ada/Library/Logs/Memex/Finance/Crashes",
+        "diskCache": "/Users/ada/Library/Caches/Memex/Finance/Chromium"
+      }
+    },
+    {
+      "name": "linux",
+      "input": { "app": "workspace", "platform": "linux", "home": "/home/ada", "env": {} },
+      "expected": {
+        "data": "/home/ada/Memex/Workspace",
+        "userData": "/home/ada/.local/state/memex/workspace/state/Electron",
+        "sessionData": "/home/ada/.local/state/memex/workspace/state/Electron",
+        "logs": "/home/ada/.local/state/memex/workspace/logs",
+        "crashDumps": "/home/ada/.local/state/memex/workspace/logs/Crashes",
+        "diskCache": "/home/ada/.cache/memex/workspace/Chromium"
+      }
+    }
+  ]
+}

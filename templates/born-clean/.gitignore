@@ -1,0 +1,45 @@
+# Dependencies and build output
+node_modules/
+dist/
+/build/
+release/
+out/
+coverage/
+*.tsbuildinfo
+# .NET build output only: a bin/ folder of a Node package holds its CLI and is committed.
+**/bin/Debug/
+**/bin/Release/
+obj/
+__pycache__/
+*.py[cod]
+.venv/
+
+# Data, settings and secrets never live in the repository. The app keeps its data in its own data folder
+# (~/Memex/<App>, or the folder its MEMEX_<APP>_HOME names), its settings in that folder or the OS settings
+# folder, and its keys in the OS credential store.
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Scratch folders of tests and proofs
+.cache/
+tmp/
+scratch/
+*.log
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/claim.json",
+  "title": "Claim",
+  "description": "A fact about a person as one app infers it, with its subject. See contracts/contacts-records.md and contracts/facts.md.",
+  "type": "object",
+  "required": ["key", "kind", "subject", "confidence", "method", "generation", "fields", "sources"],
+  "properties": {
+    "key": { "$ref": "../user/common.json#/$defs/claimKey" },
+    "kind": { "$ref": "common.json#/$defs/factKind" },
+    "subject": { "$ref": "common.json#/$defs/subject" },
+    "other": {
+      "$ref": "common.json#/$defs/subject",
+      "description": "The second identity: required for a relation, allowed for a date that links two persons."
+    },
+    "confidence": { "$ref": "../user/common.json#/$defs/confidence" },
+    "method": { "$ref": "../facts/facts.json#/$defs/method" },
+    "generation": { "$ref": "../facts/facts.json#/$defs/generation" },
+    "seen": { "$ref": "../facts/facts.json#/$defs/seen" },
+    "fields": { "type": "object" },
+    "sources": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "../user/common.json#/$defs/ref" }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    { "$ref": "common.json#/$defs/kindFields" },
+    {
+      "if": { "properties": { "kind": { "const": "relation" } }, "required": ["kind"] },
+      "then": { "required": ["other"] }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "enum": ["person", "home", "workplace", "circle", "identity"] } },
+        "required": ["kind"]
+      },
+      "then": { "not": { "required": ["other"] } }
+    }
+  ]
+}

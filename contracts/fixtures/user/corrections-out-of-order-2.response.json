@@ -1,0 +1,25 @@
+{
+  "changeId": "chg_9d1f3b5e7a0c2e4f6b8d0a1c3e5f7b9d",
+  "summary": "1 correction stored. The title of a later correction wins.",
+  "corrections": [
+    {
+      "id": "cor_019a6a91d3b57e42c8a1f6d0e9b3c7a5",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": { "title": "Lisbon, May", "lastDay": "2025-05-09" },
+      "app": "photos",
+      "createdAt": "2026-11-21T07:58:02Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_019a6a91d3b57e42c8a1f6d0e9b3c7a5",
+      "status": "applied",
+      "repeat": false,
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "version": 7,
+      "state": "active",
+      "overridden": ["title"]
+    }
+  ]
+}

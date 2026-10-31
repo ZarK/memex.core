@@ -1,0 +1,16 @@
+{
+  "changeId": "chg_1241818b2c6d4a3083a6032ba7813cef",
+  "summary": "1 identity of Jon Example confirmed by messages. 1 claim waits: its subject is a shared address.",
+  "counts": {
+    "created": 0,
+    "updated": 1,
+    "unchanged": 0,
+    "withdrawn": 0,
+    "removed": 0,
+    "unresolved": 1
+  },
+  "records": [
+    { "key": "thread-2207:+12015550147", "id": "identity_105ff82b9f019b502b4524759fa6c220" },
+    { "key": "thread-2311:family@example.net", "id": null }
+  ]
+}

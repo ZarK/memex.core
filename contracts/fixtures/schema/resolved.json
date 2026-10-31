@@ -1,0 +1,57 @@
+[
+  {
+    "id": "trip_0451f6f8dcec05dfbabdd9f2b737f179",
+    "kind": "trip",
+    "scope": "photos.trips",
+    "key": "trip_lisbon_2025",
+    "state": "active",
+    "origin": "inferred",
+    "confidence": 0.92,
+    "fields": { "title": "Lisbon with Sam", "firstDay": "2025-05-02", "lastDay": "2025-05-06", "countries": ["PT"] },
+    "corrected": ["title"]
+  },
+  {
+    "id": "trip_ebbd52757c1cb259e9e74db1b2848436",
+    "kind": "trip",
+    "scope": "photos.trips",
+    "key": "trip_lisbon_2025_part2",
+    "state": "active",
+    "origin": "inferred",
+    "confidence": 0.64,
+    "fields": { "title": "Sintra", "firstDay": "2025-05-07", "lastDay": "2025-05-08", "countries": ["PT"] },
+    "corrected": []
+  },
+  {
+    "id": "trip_bcd7c8ea8f297e446adc53dcaca993dc",
+    "kind": "trip",
+    "scope": "photos.trips",
+    "key": "trip_lisbon_2025_feb",
+    "state": "rejected",
+    "origin": "inferred",
+    "confidence": 0.41,
+    "fields": { "title": "Lisbon", "firstDay": "2025-02-14", "lastDay": "2025-02-16", "countries": ["PT"] },
+    "corrected": []
+  },
+  {
+    "id": "trip_c9d59c159678dba73e20e208125c4913",
+    "kind": "trip",
+    "scope": "photos.trips",
+    "key": "trip_bergen_2024",
+    "state": "active",
+    "origin": "inferred",
+    "confidence": 0.77,
+    "fields": { "title": "Bergen weekend", "firstDay": "2024-09-20", "lastDay": "2024-09-22", "countries": ["NO"] },
+    "corrected": ["title"]
+  },
+  {
+    "id": "milestone_5d1e0c7a9b3f4e2d8c6a1b0f9e8d7c6b",
+    "kind": "milestone",
+    "scope": null,
+    "key": null,
+    "state": "active",
+    "origin": "user",
+    "confidence": 1,
+    "fields": { "title": "Moved to Bergen", "date": "2019-08" },
+    "corrected": ["date", "title"]
+  }
+]

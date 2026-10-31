@@ -1,0 +1,47 @@
+{
+  "format": "memex.pack/1",
+  "id": "caloriek",
+  "version": "1.0.0-memex.1",
+  "title": "CalorieK (food estimate, ONNX export)",
+  "kind": "model",
+  "engine": "onnx",
+  "capabilities": ["food.recognize"],
+  "origin": "memex",
+  "derivedFrom": {
+    "url": "https://huggingface.co/example/caloriek",
+    "revision": "606efb57ec080a3985d2c01d1dc443e5f1b3bc46",
+    "license": "MIT",
+    "notice": "Memex exported the PyTorch weights to ONNX. The weights are not changed.",
+    "trainingData": [
+      { "name": "CalorieK training set", "url": "https://huggingface.co/example/caloriek", "license": null }
+    ]
+  },
+  "source": {
+    "publisher": "Memex",
+    "homepage": "https://huggingface.co/example-owner/caloriek-onnx",
+    "revision": "3b7d0c9e1a2f4d6b8c0e2a4f6b8d0c2e4a6f8b0d"
+  },
+  "license": {
+    "spdx": "MIT",
+    "url": "https://huggingface.co/example/caloriek",
+    "file": "LICENSE",
+    "commercial": "allowed",
+    "limits": ["Trained on the CalorieK training set, which has no stated license."],
+    "attribution": "CalorieK, MIT License; ONNX export by Memex",
+    "acceptance": "none"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 45,
+      "sha256": "90c2dde676311e66d07ff9b0d0586ec838de6b0dcbd53b0875d01239480ac306",
+      "url": "https://huggingface.co/example-owner/caloriek-onnx/resolve/3b7d0c9e1a2f4d6b8c0e2a4f6b8d0c2e4a6f8b0d/LICENSE"
+    },
+    {
+      "path": "caloriek.onnx",
+      "bytes": 3221225472,
+      "sha256": "d924142ac2d48f047bd642e82572af66a4aeef96d9d33af405fefc008fe1b0f6",
+      "url": "https://huggingface.co/example-owner/caloriek-onnx/resolve/3b7d0c9e1a2f4d6b8c0e2a4f6b8d0c2e4a6f8b0d/caloriek.onnx"
+    }
+  ]
+}

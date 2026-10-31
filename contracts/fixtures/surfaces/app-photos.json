@@ -1,0 +1,15 @@
+{
+  "format": "memex.app/1",
+  "app": "photos",
+  "name": "Memex Photos",
+  "kind": "app",
+  "version": "1.0.0",
+  "executable": "C:\\Users\\alex\\AppData\\Local\\Programs\\Memex Photos\\Memex Photos.exe",
+  "mcp": { "command": "memex-photos", "args": ["mcp"] },
+  "running": {
+    "pid": 4242,
+    "startedAt": "2026-11-10T08:00:00Z",
+    "url": "http://127.0.0.1:53124",
+    "tokenFile": "C:\\Users\\alex\\AppData\\Local\\Memex\\Photos\\State\\token"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "relation_3b765bf5fd9e7807d1c1dc0533dc9bee",
+  "kind": "relation",
+  "version": 1,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "other": "person_55579b557896d0ce1764c47fed644f9b",
+  "confidence": 1,
+  "review": false,
+  "fields": { "type": "partner", "from": "2016" },
+  "provenance": {
+    "type": [
+      {
+        "scope": "photos.relations",
+        "key": "relation:partner:person_bb472edb86809a761936d90c70aeb434:person_55579b557896d0ce1764c47fed644f9b"
+      }
+    ],
+    "from": [
+      {
+        "scope": "photos.relations",
+        "key": "relation:partner:person_bb472edb86809a761936d90c70aeb434:person_55579b557896d0ce1764c47fed644f9b"
+      }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "photos.relations",
+      "key": "relation:partner:person_bb472edb86809a761936d90c70aeb434:person_55579b557896d0ce1764c47fed644f9b",
+      "confidence": 1
+    }
+  ],
+  "sources": [{ "app": "photos", "kind": "relation", "id": "rel_4" }],
+  "createdAt": "2026-11-21T12:00:00Z",
+  "updatedAt": "2026-11-21T12:00:00Z"
+}

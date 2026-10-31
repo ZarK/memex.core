@@ -1,0 +1,75 @@
+name: DCO
+
+# Checks that every commit in a pull request has a Developer Certificate of Origin sign-off
+# (see CONTRIBUTING.md). The "DCO" check is required on main by a repository ruleset.
+#
+# pull_request_target runs this file as it is on the base branch, so a pull request cannot
+# change the check that judges it. The job never checks out or runs code from the pull
+# request: it reads the commit list through the API with a read-only token, and the commit
+# messages are handled only as data (jq), never as shell text.
+#
+# Commits by the repository owner and by Dependabot need no sign-off when the pull request is
+# opened by one of them too. Every other commit needs a "Signed-off-by:" line with the
+# commit author's name and e-mail address.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: dco-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dco:
+    name: DCO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check sign-off on every commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_OPENER: ${{ github.event.pull_request.user.login }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          commits="$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits?per_page=100" | jq -s 'add')"
+          count="$(jq 'length' <<<"$commits")"
+          # The API lists at most 250 commits of a pull request. Fail closed instead of
+          # checking only part of it.
+          if [ "$count" -ge 250 ]; then
+            echo "::error::This pull request has $count or more commits; the check reads at most 250. Split it into smaller pull requests."
+            exit 1
+          fi
+          report="$(jq -r --arg opener "$PR_OPENER" --arg owner "$OWNER" '
+            def lc: ascii_downcase;
+            def trusted($login): $login == $owner or $login == "dependabot[bot]";
+            .[]
+            | . as $c
+            | ($c.commit.author.name) as $name
+            | ($c.commit.author.email | lc) as $email
+            | if ($c.parents | length) > 1 then
+                "skip\t\($c.sha[0:12])\tmerge commit"
+              elif trusted($opener) and trusted($c.author.login // "") then
+                "skip\t\($c.sha[0:12])\tby \($c.author.login)"
+              elif [ $c.commit.message
+                     | split("\n")[]
+                     | capture("^Signed-off-by:\\s*(?<n>.*?)\\s*<(?<e>[^>]+)>\\s*$")?
+                     | select(.n == $name and (.e | lc) == $email) ] | length > 0 then
+                "ok\t\($c.sha[0:12])\tsigned off by \($name)"
+              else
+                "missing\t\($c.sha[0:12])\tno \"Signed-off-by: \($name) <\($c.commit.author.email)>\" line"
+              end
+          ' <<<"$commits")"
+          printf '%s\n' "$report"
+          if grep -q '^missing' <<<"$report"; then
+            echo "::error::One or more commits have no sign-off that matches the commit author. 'git rebase --signoff' adds it; see CONTRIBUTING.md."
+            exit 1
+          fi
+          echo "All $count commits pass."

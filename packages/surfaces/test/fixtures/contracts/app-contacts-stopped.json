@@ -1,0 +1,10 @@
+{
+  "format": "memex.app/1",
+  "app": "contacts",
+  "name": "Memex Contacts",
+  "kind": "tool",
+  "version": "1.0.0",
+  "executable": "/home/alex/.local/share/memex/apps/contacts/1.0.0/memex-contacts",
+  "mcp": { "command": "memex-contacts", "args": ["mcp"] },
+  "running": null
+}

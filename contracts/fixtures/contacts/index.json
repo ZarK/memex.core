@@ -1,0 +1,32 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "claims-write.response.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteOutput",
+    "workplaces-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "dates-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "identities-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "identities-claims-write.response.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteOutput",
+    "conversations-identities-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "conversations-identities-claims-write.response.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteOutput",
+    "photos-circles-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "photos-relations-claims-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "person.record.json": "schemas/contacts/record.json",
+    "person-merged.record.json": "schemas/contacts/record.json",
+    "home.record.json": "schemas/contacts/record.json",
+    "workplace.record.json": "schemas/contacts/record.json",
+    "circle.record.json": "schemas/contacts/record.json",
+    "relation.record.json": "schemas/contacts/record.json",
+    "date.record.json": "schemas/contacts/record.json",
+    "identity.record.json": "schemas/contacts/record.json",
+    "homes-list.request.json": "openapi/contacts.v1.yaml#/components/schemas/ListInput",
+    "homes-list.response.json": "openapi/contacts.v1.yaml#/components/schemas/RecordPage",
+    "persons-get.response.json": "openapi/contacts.v1.yaml#/components/schemas/RecordEnvelope",
+    "corrections-write.request.json": "openapi/contacts.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-write.response.json": "openapi/contacts.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "corrections-unmerge.request.json": "openapi/contacts.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-unmerge.response.json": "openapi/contacts.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "changes-list.request.json": "openapi/contacts.v1.yaml#/components/schemas/ChangesListInput",
+    "changes-list.response.json": "openapi/contacts.v1.yaml#/components/schemas/ChangesListOutput"
+  }
+}

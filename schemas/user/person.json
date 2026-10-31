@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/person.json",
+  "title": "Person fields",
+  "description": "The owner. Memex.User keeps one person record; other people are Contacts references.",
+  "type": "object",
+  "required": ["name", "role"],
+  "properties": {
+    "name": { "$ref": "common.json#/$defs/text" },
+    "role": { "const": "owner" },
+    "contact": { "$ref": "common.json#/$defs/contactRef" }
+  },
+  "additionalProperties": false
+}

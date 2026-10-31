@@ -1,0 +1,31 @@
+{
+  "scope": "contacts.workplaces",
+  "claims": [
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:org:equinor",
+      "kind": "workplace",
+      "subject": { "card": "card_f8bd9d9b97259addc818793929b06c90" },
+      "confidence": 0.9,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2024-09-30T08:00:00Z" },
+      "fields": { "name": "Fabrikam", "type": "employer" },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }
+      ]
+    },
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:org:aker-bp",
+      "kind": "workplace",
+      "subject": { "card": "card_f8bd9d9b97259addc818793929b06c90" },
+      "confidence": 0.9,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2024-10-05T08:00:00Z", "last": "2026-11-16T10:00:00Z" },
+      "fields": { "name": "Contoso", "type": "employer", "stints": [{ "title": "Geologist" }] },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }
+      ]
+    }
+  ]
+}

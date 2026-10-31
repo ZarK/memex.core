@@ -1,0 +1,45 @@
+{
+  "job": {
+    "id": "sj_5d1f0a2b",
+    "tool": "edit",
+    "state": "succeeded",
+    "progress": { "percent": 100, "step": "Saving" },
+    "createdAt": "2026-11-18T10:00:00Z",
+    "finishedAt": "2026-11-18T10:00:41Z",
+    "outputs": [
+      {
+        "name": "image",
+        "state": "ready",
+        "url": "/api/v1/files/f_77a0c3",
+        "mediaType": "image/png",
+        "bytes": 48213377,
+        "sha256": "e78c14ac7da272940c1f3d7a1241cdb238fdd3ab5b6f06e36bf1679479ecb9c1",
+        "width": 6000,
+        "height": 4000
+      }
+    ],
+    "recipe": {
+      "tool": "edit",
+      "params": { "prompt": "Remove the lamp post", "strength": 0.6 },
+      "seed": 184467,
+      "quality": "final",
+      "workflow": { "id": "photo-edit-masked", "version": "3" },
+      "models": [
+        {
+          "name": "Example inpaint model",
+          "sha256": "22e07219bdf278d2baf5f29c336b985a93f45b49ac4a955a6adaacc6f37cfa41"
+        }
+      ],
+      "studio": "1.0.0",
+      "source": { "app": "photos", "kind": "item", "id": "it_0c9e" },
+      "input": {
+        "sha256": "72fe06e1ff9ab27d744a99fbacad400fb325a79e0b31dfdf74f6f775663207d0",
+        "width": 6000,
+        "height": 4000
+      },
+      "output": { "width": 6000, "height": 4000 },
+      "enlarged": false
+    },
+    "error": null
+  }
+}

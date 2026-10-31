@@ -1,0 +1,7 @@
+# Supply-chain settings. pnpm 11 reads them here; .npmrc holds the same settings for npm.
+saveExact: true
+ignoreScripts: true
+# 14 days, in minutes. The Memex packages are exempt, so a release of memex.core can be used at once.
+minimumReleaseAge: 20160
+minimumReleaseAgeExclude:
+  - '@tjalve/*'

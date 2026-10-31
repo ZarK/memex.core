@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/chapter.json",
+  "title": "Chapter fields",
+  "description": "A named period: a trip, a move, a project, a payoff.",
+  "type": "object",
+  "required": ["title", "type", "from"],
+  "properties": {
+    "title": { "$ref": "common.json#/$defs/text" },
+    "type": { "enum": ["trip", "move", "project", "payoff", "period", "other"] },
+    "from": { "$ref": "common.json#/$defs/partialDate" },
+    "to": { "$ref": "common.json#/$defs/partialDate" },
+    "trip": { "$ref": "common.json#/$defs/tripId" }
+  },
+  "additionalProperties": false
+}

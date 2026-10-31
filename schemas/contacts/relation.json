@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/relation.json",
+  "title": "Relation fields",
+  "description": "A typed edge from the person to the other person of the record. A former partner is history, not deletion.",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "enum": ["partner", "parent", "child", "sibling", "family", "friend", "colleague", "other"]
+    },
+    "label": { "$ref": "../user/common.json#/$defs/text" },
+    "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "to": { "$ref": "../user/common.json#/$defs/partialDate" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/contracts/relationship.schema.json",
+  "title": "Relationship",
+  "description": "A typed, directed edge between two entities. (from_id, to_id, type) is unique.",
+  "type": "object",
+  "required": ["id", "from_id", "to_id", "type", "created_at"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "from_id": { "type": "string", "format": "uuid" },
+    "to_id": { "type": "string", "format": "uuid" },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Edge type, e.g. 'belongs_to', 'categorized_as'."
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

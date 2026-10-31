@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/trip.json",
+  "title": "Trip fields",
+  "description": "Time away from home: the days, the destinations, and who was there.",
+  "type": "object",
+  "required": ["title", "firstDay", "lastDay"],
+  "properties": {
+    "title": { "$ref": "common.json#/$defs/text" },
+    "firstDay": { "$ref": "common.json#/$defs/localDate" },
+    "lastDay": { "$ref": "common.json#/$defs/localDate" },
+    "destinations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "$ref": "common.json#/$defs/text" },
+          "town": { "$ref": "common.json#/$defs/text" },
+          "country": { "$ref": "common.json#/$defs/country" },
+          "location": { "$ref": "common.json#/$defs/location" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "countries": {
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/country" },
+      "uniqueItems": true
+    },
+    "participants": { "type": "array", "items": { "$ref": "common.json#/$defs/personRef" } },
+    "home": { "$ref": "common.json#/$defs/homeId" }
+  },
+  "additionalProperties": false
+}

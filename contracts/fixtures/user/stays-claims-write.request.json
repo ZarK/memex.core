@@ -1,0 +1,22 @@
+{
+  "scope": "photos.stays",
+  "partition": "2025",
+  "claims": [
+    {
+      "key": "stay_9f8e7d6c",
+      "kind": "stay",
+      "confidence": 0.8,
+      "method": "rule:stay-cluster/3",
+      "generation": 12,
+      "fields": {
+        "arrival": "2025-05-03T09:12:00Z",
+        "departure": "2025-05-03T11:40:00Z",
+        "location": { "lat": 38.6916, "lon": -9.216, "radiusM": 100 },
+        "name": "Belém Tower",
+        "timeZone": "Europe/Lisbon"
+      },
+      "sources": [{ "app": "photos", "kind": "stay", "id": "stay_9f8e7d6c" }]
+    }
+  ],
+  "dryRun": true
+}

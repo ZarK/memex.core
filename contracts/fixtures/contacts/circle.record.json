@@ -1,0 +1,38 @@
+{
+  "id": "circle_2b4935131736297b4b2b0237288f863e",
+  "kind": "circle",
+  "version": 1,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "confidence": 1,
+  "review": false,
+  "fields": { "name": "climbing", "from": "2019" },
+  "provenance": {
+    "name": [
+      {
+        "scope": "photos.circles",
+        "key": "circle:climbing:person_bb472edb86809a761936d90c70aeb434"
+      }
+    ],
+    "from": [
+      {
+        "scope": "photos.circles",
+        "key": "circle:climbing:person_bb472edb86809a761936d90c70aeb434"
+      }
+    ]
+  },
+  "alternatives": {},
+  "corrected": [],
+  "claims": [
+    {
+      "scope": "photos.circles",
+      "key": "circle:climbing:person_bb472edb86809a761936d90c70aeb434",
+      "confidence": 1,
+      "seen": { "first": "2019-06-01T16:20:00Z", "last": "2025-09-14T12:05:00Z" }
+    }
+  ],
+  "sources": [{ "app": "photos", "kind": "circle", "id": "circle_17" }],
+  "createdAt": "2026-11-21T12:00:00Z",
+  "updatedAt": "2026-11-21T12:00:00Z"
+}

@@ -1,0 +1,12 @@
+{
+  "corrections": [
+    {
+      "id": "cor_d0f631ca1ddba8db3bcfcb9e057cdc98",
+      "op": "set",
+      "record": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+      "fields": { "title": "Lisbon with Sam" },
+      "app": "photos",
+      "createdAt": "2026-11-20T17:40:02Z"
+    }
+  ]
+}

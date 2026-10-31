@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The hardened runtime entitlements of an ad-hoc signed Memex app: the JIT that V8 needs, and no library validation,
+     because an ad-hoc signature has no team id, so library validation would refuse the app's own Electron Framework.
+     No com.apple.security.cs.allow-dyld-environment-variables, so DYLD_INSERT_LIBRARIES and the like are ignored. -->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

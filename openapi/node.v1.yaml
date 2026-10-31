@@ -1,0 +1,1550 @@
+openapi: 3.1.0
+info:
+  title: Memex.Node API
+  version: "1"
+  summary: Models, packs, backends, and the scheduler for every Memex app on one machine.
+  description: |
+    The contract text is contracts/node-api.md. This file gives the shapes.
+
+    Transport: HTTP/1.1 over a named pipe (Windows) or Unix socket (macOS, Linux) for each OS
+    login account. On Windows, the pipe has a new random name at each start
+    (\\.\pipe\memex-node-<32 lowercase hex>), and its access list refuses network sign-ins.
+    Only running.socket in the app record <apps>/node.json names it, and only the account can
+    read that record. Clients read the name from the record and never build it. The Host header
+    is "localhost". No token is used on the pipe or socket. Node v1 has no network listener.
+    With --dev-loopback (development only), Node listens on 127.0.0.1 with the token and request
+    checks of contracts/surfaces.md.
+
+    Routes and backends of kind "node" (another Memex Node) are in the format for v2, with
+    pairing. v1 refuses them with 409 route_unavailable.
+
+    Errors use the one error body of contracts/surfaces.md.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: http://localhost
+    description: Over the named pipe or Unix socket in running.socket of <apps>/node.json. On Windows, the pipe name changes at each start.
+tags:
+  - name: service
+  - name: apps
+  - name: work
+  - name: sessions
+  - name: packs
+  - name: backends
+  - name: openai
+paths:
+  /health:
+    get:
+      tags: [service]
+      operationId: getHealth
+      summary: Health without paths or user data
+      responses:
+        "200":
+          description: Node runs.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /v1/status:
+    get:
+      tags: [service]
+      operationId: getStatus
+      summary: Version, devices, and work in each lane
+      responses:
+        "200":
+          description: Status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Status" }
+  /v1/drain:
+    post:
+      tags: [service]
+      operationId: drain
+      summary: Stop taking new work and stop when the held work ends (the service launcher, before a newer copy starts)
+      responses:
+        "202":
+          description: Node drains. It no longer holds the single-instance lock, so a newer copy can start.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Drain" }
+  /v1/apps/register:
+    post:
+      tags: [apps]
+      operationId: registerApp
+      summary: State the functions and packs of an app at start
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Registration" }
+      responses:
+        "200":
+          description: The state of each function.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationResult" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/capabilities:
+    get:
+      tags: [apps]
+      operationId: listCapabilities
+      summary: What Node can do now
+      responses:
+        "200":
+          description: Capabilities.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Capability" }
+  /v1/functions:
+    get:
+      tags: [apps]
+      operationId: listFunctions
+      summary: Every registered function with its route and state
+      responses:
+        "200":
+          description: Functions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/FunctionState" }
+  /v1/routes:
+    get:
+      tags: [apps]
+      operationId: getRoutes
+      summary: The default route and the route of each function
+      responses:
+        "200":
+          description: Routes.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routes" }
+    put:
+      tags: [apps]
+      operationId: putRoutes
+      summary: Replace the routes (settings; for an action of the user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Routes" }
+      responses:
+        "200":
+          description: The routes as stored.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routes" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error", description: "route_unavailable: a route of kind node. v1 keeps the routes that it had." }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/uploads:
+    post:
+      tags: [work]
+      operationId: createUpload
+      summary: Store bytes for a later call (up to 1 GiB)
+      requestBody:
+        required: true
+        content:
+          "*/*":
+            schema: { type: string, contentMediaType: application/octet-stream }
+      responses:
+        "201":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [upload]
+                properties:
+                  upload: { $ref: "#/components/schemas/Upload" }
+        "413": { $ref: "#/components/responses/Error" }
+  /v1/run:
+    post:
+      tags: [work]
+      operationId: run
+      summary: A short call that returns its result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunRequest" }
+      responses:
+        "200":
+          description: The result and its record.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RunResult" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/jobs:
+    post:
+      tags: [work]
+      operationId: createJob
+      summary: A long call with progress, outputs, and cancel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JobRequest" }
+      responses:
+        "202":
+          description: Accepted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobEnvelope" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [work]
+      operationId: listJobs
+      parameters:
+        - { name: app, in: query, schema: { $ref: "#/components/schemas/AppId" } }
+        - { name: state, in: query, schema: { $ref: "#/components/schemas/JobState" } }
+      responses:
+        "200":
+          description: Jobs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Job" }
+  /v1/jobs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [work]
+      operationId: getJob
+      responses:
+        "200":
+          description: The job.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobEnvelope" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [work]
+      operationId: deleteJob
+      summary: Cancel a job that has not ended, or remove a job that has ended
+      responses:
+        "200":
+          description: The job after the cancel.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobEnvelope" }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/jobs/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [work]
+      operationId: jobEvents
+      summary: "Server-sent events: 'event: job' with the full Job as data"
+      responses:
+        "200":
+          description: An event stream.
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /v1/jobs/{id}/outputs/{name}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - { name: name, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [work]
+      operationId: getJobOutput
+      responses:
+        "200":
+          description: The file, with its media type.
+          content:
+            "*/*":
+              schema: { type: string, contentMediaType: application/octet-stream }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/leases:
+    post:
+      tags: [work]
+      operationId: createLease
+      summary: Ask for a device for model work in the app's own process
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeaseRequest" }
+      responses:
+        "201":
+          description: The lease, granted or waiting.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaseEnvelope" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/leases/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [work]
+      operationId: getLease
+      responses:
+        "200":
+          description: The lease.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaseEnvelope" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [work]
+      operationId: releaseLease
+      responses:
+        "200":
+          description: The lease, ended.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaseEnvelope" }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/leases/{id}/renew:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [work]
+      operationId: renewLease
+      summary: Keep the lease (every 10 seconds)
+      responses:
+        "200":
+          description: The lease with a new expiresAt.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaseEnvelope" }
+        "410": { $ref: "#/components/responses/Error" }
+  /v1/leases/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [work]
+      operationId: leaseEvents
+      summary: "Server-sent events: 'event: lease' with the full Lease as data"
+      responses:
+        "200":
+          description: An event stream.
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /v1/queue:
+    get:
+      tags: [work]
+      operationId: getQueue
+      summary: All waiting and running work, each with its wait reason
+      parameters:
+        - { name: app, in: query, schema: { $ref: "#/components/schemas/AppId" } }
+      responses:
+        "200":
+          description: Queue.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/QueueItem" }
+  /v1/sessions/prepare:
+    post:
+      tags: [sessions]
+      operationId: prepareSession
+      summary: Prepare a live voice or vision session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SessionRequest" }
+      responses:
+        "201":
+          description: The session. Open the WebSocket on its url before expiresAt.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [session]
+                properties:
+                  session: { $ref: "#/components/schemas/Session" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/sessions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    delete:
+      tags: [sessions]
+      operationId: endSession
+      responses:
+        "204": { description: Ended. }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/realtime:
+    get:
+      tags: [sessions]
+      operationId: realtime
+      summary: WebSocket with the OpenAI Realtime events listed in contracts/node-api.md
+      parameters:
+        - { name: session, in: query, required: true, schema: { type: string } }
+      responses:
+        "101": { description: Switching to WebSocket. }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/packs:
+    get:
+      tags: [packs]
+      operationId: listPacks
+      responses:
+        "200":
+          description: The packs in the Node catalog and in the store.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Pack" }
+  /v1/packs/location:
+    get:
+      tags: [packs]
+      operationId: getPackLocation
+      responses:
+        "200":
+          description: The store folder and a move in progress.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PackLocation" }
+    put:
+      tags: [packs]
+      operationId: movePacks
+      summary: Move the store (settings; for an action of the user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path: { type: string, minLength: 1 }
+              additionalProperties: false
+      responses:
+        "202":
+          description: The move started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PackLocation" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/packs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [packs]
+      operationId: getPack
+      responses:
+        "200":
+          description: The pack with its manifest.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pack" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [packs]
+      operationId: removePack
+      summary: Remove every version that no registered app pins
+      responses:
+        "200":
+          description: The pack after the removal.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pack" }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/packs/{id}/install:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [packs]
+      operationId: installPack
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version: { type: string }
+              additionalProperties: false
+      responses:
+        "202":
+          description: The install started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pack" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /v1/packs/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [packs]
+      operationId: packEvents
+      summary: "Server-sent events: 'event: pack' with the full Pack as data"
+      responses:
+        "200":
+          description: An event stream.
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /v1/packs/{id}/license:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [packs]
+      operationId: getPackLicense
+      responses:
+        "200":
+          description: The license text to show before the acceptance.
+          content:
+            text/plain:
+              schema: { type: string }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/packs/{id}/accept:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [packs]
+      operationId: acceptPackLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [app, version, textSha256]
+              properties:
+                app: { $ref: "#/components/schemas/AppId" }
+                version: { type: string }
+                textSha256: { $ref: "#/components/schemas/Sha256" }
+              additionalProperties: false
+      responses:
+        "200":
+          description: The pack after the acceptance.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pack" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /v1/backends:
+    get:
+      tags: [backends]
+      operationId: listBackends
+      responses:
+        "200":
+          description: Backends.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Backend" }
+    post:
+      tags: [backends]
+      operationId: addBackend
+      summary: Add a backend (settings; for an action of the user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BackendCreate" }
+      responses:
+        "201":
+          description: The backend after its first probe.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Backend" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error", description: "route_unavailable: a backend of type node, reserved for v2." }
+  /v1/backends/discover:
+    post:
+      tags: [backends]
+      operationId: discoverBackends
+      summary: Look for backends on 127.0.0.1 at the ports 11434, 1234, 8080, and 8000. Adds nothing.
+      responses:
+        "200":
+          description: What Node found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [url, type, models]
+                      properties:
+                        url: { type: string, format: uri }
+                        type: { const: openai }
+                        models:
+                          type: array
+                          items: { $ref: "#/components/schemas/BackendModel" }
+  /v1/backends/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    patch:
+      tags: [backends]
+      operationId: changeBackend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BackendPatch" }
+      responses:
+        "200":
+          description: The backend.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Backend" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [backends]
+      operationId: removeBackend
+      responses:
+        "204": { description: "Removed, with its stored key." }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/models:
+    get:
+      tags: [openai]
+      operationId: listModels
+      summary: OpenAI List models
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+      responses:
+        "200":
+          description: OpenAI model list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenAIObject" }
+  /v1/chat/completions:
+    post:
+      tags: [openai]
+      operationId: createChatCompletion
+      summary: OpenAI Chat Completions, with streaming and image input
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+        - $ref: "#/components/parameters/MemexFunction"
+        - $ref: "#/components/parameters/MemexLane"
+        - $ref: "#/components/parameters/MemexBatchKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenAIObject" }
+      responses:
+        "200":
+          description: An OpenAI response with an added memex field (the ResultRecord), or a stream whose last chunk has it.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenAIResponse" }
+            text/event-stream:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/embeddings:
+    post:
+      tags: [openai]
+      operationId: createEmbeddings
+      summary: OpenAI Embeddings
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+        - $ref: "#/components/parameters/MemexFunction"
+        - $ref: "#/components/parameters/MemexLane"
+        - $ref: "#/components/parameters/MemexBatchKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenAIObject" }
+      responses:
+        "200":
+          description: An OpenAI response with an added memex field.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenAIResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/audio/transcriptions:
+    post:
+      tags: [openai]
+      operationId: createTranscription
+      summary: OpenAI Transcriptions (multipart form)
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+        - $ref: "#/components/parameters/MemexFunction"
+        - $ref: "#/components/parameters/MemexLane"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, model]
+              properties:
+                file: { type: string, contentMediaType: application/octet-stream }
+                model: { type: string }
+              additionalProperties: true
+      responses:
+        "200":
+          description: An OpenAI response with an added memex field.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenAIResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/audio/speech:
+    post:
+      tags: [openai]
+      operationId: createSpeech
+      summary: OpenAI Speech. The header Memex-Result has the ResultRecord as base64url JSON.
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+        - $ref: "#/components/parameters/MemexFunction"
+        - $ref: "#/components/parameters/MemexLane"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenAIObject" }
+      responses:
+        "200":
+          description: Audio.
+          headers:
+            Memex-Result:
+              schema: { type: string }
+          content:
+            audio/*:
+              schema: { type: string, contentMediaType: application/octet-stream }
+        "400": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/audio/voices:
+    get:
+      tags: [openai]
+      operationId: listVoices
+      summary: The voices of the text-to-speech route (a Memex addition)
+      parameters:
+        - $ref: "#/components/parameters/MemexApp"
+        - $ref: "#/components/parameters/MemexFunction"
+      responses:
+        "200":
+          description: Voices.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [voices]
+                properties:
+                  voices:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, language]
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        language: { type: string, description: BCP 47 tag. }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, minLength: 1 }
+    MemexApp:
+      name: Memex-App
+      in: header
+      required: true
+      schema: { $ref: "#/components/schemas/AppId" }
+    MemexFunction:
+      name: Memex-Function
+      in: header
+      required: true
+      schema: { $ref: "#/components/schemas/FunctionId" }
+    MemexLane:
+      name: Memex-Lane
+      in: header
+      required: false
+      schema: { $ref: "#/components/schemas/Lane" }
+    MemexBatchKey:
+      name: Memex-Batch-Key
+      in: header
+      required: false
+      schema: { $ref: "#/components/schemas/BatchKey" }
+  responses:
+    Error:
+      description: The one error body of contracts/surfaces.md.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error: { $ref: "../schemas/surfaces/error.json" }
+    Health:
+      type: object
+      required: [status, app, version]
+      properties:
+        status: { enum: [ok, draining], description: "draining after POST /v1/drain: a newer copy takes over. A client reads the app record again." }
+        app: { const: node }
+        version: { type: string }
+      additionalProperties: false
+    Status:
+      type: object
+      required: [version, startedAt, devices, lanes, leases, sessions, backends]
+      properties:
+        version: { type: string }
+        startedAt: { type: string, format: date-time }
+        devices:
+          type: array
+          items:
+            type: object
+            required: [id, kind, name]
+            properties:
+              id: { type: string, examples: ["gpu:0", "cpu"] }
+              kind: { enum: [gpu, cpu] }
+              name: { type: string }
+              memoryBytes: { type: integer }
+              freeMemoryBytes: { type: integer }
+              provider: { enum: [webgpu, coreml, cpu] }
+        lanes:
+          type: object
+          propertyNames: { $ref: "#/components/schemas/Lane" }
+          additionalProperties:
+            type: object
+            required: [running, waiting]
+            properties:
+              running: { type: integer, minimum: 0 }
+              waiting: { type: integer, minimum: 0 }
+        leases: { type: integer, minimum: 0 }
+        sessions: { type: integer, minimum: 0 }
+        backends: { type: integer, minimum: 0 }
+    Drain:
+      type: object
+      required: [draining, pid, version, held]
+      properties:
+        draining: { const: true }
+        pid: { type: integer, minimum: 1, description: "The process that drains. It exits when held is 0, or after the drain time." }
+        version: { type: string }
+        held: { type: integer, minimum: 0, description: "Requests, streams, and leases that Node still serves." }
+      additionalProperties: false
+    AppId:
+      type: string
+      pattern: "^[a-z][a-z0-9]*$"
+      description: The app id from contracts/storage.md.
+    FunctionId:
+      type: string
+      pattern: "^[a-z][a-z0-9]*\\.[a-z][a-z0-9-]*$"
+      description: "<app>.<name>, for example photos.food-reading."
+    Lane:
+      enum: [live, interactive, background, idle]
+    BatchKey:
+      type: string
+      minLength: 1
+      maxLength: 200
+    Sha256:
+      type: string
+      pattern: "^[0-9a-f]{64}$"
+    ModelPin:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
+        sha256: { $ref: "#/components/schemas/Sha256" }
+        fingerprint: { $ref: "#/components/schemas/Sha256" }
+      additionalProperties: false
+    Wait:
+      type: object
+      required: [reason, detail, since]
+      properties:
+        reason:
+          type: string
+          description: "Known values: queued, higher-lane, live-session, batching, model-loading, model-swap, device-busy, lease-held, backend-limit, backend-down, pack-missing, idle-only. A client shows detail for a value that it does not know."
+        detail: { type: string, description: A sentence that an app can show. }
+        since: { type: string, format: date-time }
+        ahead: { type: integer, minimum: 0, description: Work that Node starts before this one. }
+        retryAt: { type: string, format: date-time, description: Set for backend-down. }
+      additionalProperties: false
+    Bytes:
+      description: An input file, by upload or inline (at most 4 MiB after decoding).
+      oneOf:
+        - type: object
+          required: [upload]
+          properties:
+            upload: { type: string }
+          additionalProperties: false
+        - type: object
+          required: [base64, mediaType]
+          properties:
+            base64: { type: string, contentEncoding: base64 }
+            mediaType: { type: string }
+          additionalProperties: false
+    Upload:
+      type: object
+      required: [id, sha256, bytes, mediaType, expiresAt]
+      properties:
+        id: { type: string }
+        sha256: { $ref: "#/components/schemas/Sha256" }
+        bytes: { type: integer, minimum: 0 }
+        mediaType: { type: string }
+        expiresAt: { type: string, format: date-time }
+      additionalProperties: false
+    FunctionDeclaration:
+      type: object
+      required: [name, capabilities, lane, runsIn, required, packs]
+      properties:
+        name: { type: string, pattern: "^[a-z][a-z0-9-]*$" }
+        capabilities: { type: array, minItems: 1, items: { type: string }, description: "The Node capabilities that the function uses." }
+        lane: { $ref: "#/components/schemas/Lane" }
+        runsIn: { enum: [node, app] }
+        required: { type: boolean }
+        packs:
+          type: array
+          items: { type: string }
+          description: The packs of the default model, in Node's catalog.
+      additionalProperties: false
+    Registration:
+      type: object
+      required: [app, version, functions]
+      properties:
+        app: { $ref: "#/components/schemas/AppId" }
+        version: { type: string }
+        minNodeVersion: { type: string }
+        functions:
+          type: array
+          items: { $ref: "#/components/schemas/FunctionDeclaration" }
+      additionalProperties: false
+    RegistrationResult:
+      type: object
+      required: [node, functions]
+      properties:
+        node:
+          type: object
+          required: [id, version]
+          properties:
+            id: { type: string }
+            version: { type: string }
+        functions:
+          type: array
+          items: { $ref: "#/components/schemas/FunctionState" }
+    FunctionState:
+      type: object
+      required: [id, app, capabilities, lane, runsIn, route, state]
+      properties:
+        id: { $ref: "#/components/schemas/FunctionId" }
+        app: { $ref: "#/components/schemas/AppId" }
+        capabilities: { type: array, minItems: 1, items: { type: string } }
+        lane: { $ref: "#/components/schemas/Lane" }
+        runsIn: { enum: [node, app] }
+        route: { $ref: "#/components/schemas/Route" }
+        state: { enum: [ready, needs-pack, needs-acceptance, needs-backend, unavailable] }
+        reason: { type: string, description: A sentence that an app can show when the state is not ready. }
+        models:
+          type: array
+          items: { $ref: "#/components/schemas/ModelPin" }
+    Capability:
+      type: object
+      required: [name, call, state]
+      properties:
+        name: { type: string, examples: [embed.text, food.recognize] }
+        call: { enum: [run, job, openai, session, lease] }
+        engine: { enum: [onnx, generative, backend] }
+        models:
+          type: array
+          items: { $ref: "#/components/schemas/ModelPin" }
+        state: { enum: [ready, needs-pack, needs-backend, unavailable] }
+        reason: { type: string }
+    Route:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: { const: auto }
+          additionalProperties: false
+        - type: object
+          required: [kind, backend, model]
+          properties:
+            kind: { const: url }
+            backend: { type: string }
+            model: { type: string }
+            concurrency: { type: integer, minimum: 1, description: The most calls of the function at this backend. }
+            also:
+              type: array
+              description: More servers. The function shares its calls between them.
+              items: { $ref: "#/components/schemas/RouteTarget" }
+          additionalProperties: false
+        - type: object
+          required: [kind, backend]
+          description: Another Memex Node. Reserved for v2; v1 refuses it with 409 route_unavailable.
+          properties:
+            kind: { const: node }
+            backend: { type: string }
+          additionalProperties: false
+    RouteTarget:
+      type: object
+      required: [backend, model]
+      properties:
+        backend: { type: string }
+        model: { type: string }
+        concurrency: { type: integer, minimum: 1 }
+      additionalProperties: false
+    Routes:
+      type: object
+      required: [default, functions]
+      properties:
+        default:
+          description: auto or url. node (every function without its own route goes to another Node) is reserved for v2.
+          $ref: "#/components/schemas/Route"
+        functions:
+          type: object
+          propertyNames: { $ref: "#/components/schemas/FunctionId" }
+          additionalProperties: { $ref: "#/components/schemas/Route" }
+      additionalProperties: false
+    WorkFields:
+      type: object
+      required: [app, function]
+      properties:
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        lane: { $ref: "#/components/schemas/Lane" }
+        model: { $ref: "#/components/schemas/ModelPin" }
+        batchKey: { $ref: "#/components/schemas/BatchKey" }
+    RunRequest:
+      allOf:
+        - $ref: "#/components/schemas/WorkFields"
+        - type: object
+          required: [input]
+          properties:
+            input:
+              type: object
+              description: "The input of the capability: EmbedTextInput, ImagesInput (embed.image, ocr, faces, sensitivity.check), or ImageTagsInput."
+            deadlineMs: { type: integer, minimum: 100, default: 60000 }
+    RunResult:
+      type: object
+      required: [result, record]
+      properties:
+        result:
+          type: object
+          description: "The output of the capability: EmbedOutput, ImageTagsOutput, OcrOutput, FacesOutput, or SensitivityOutput."
+        record: { $ref: "#/components/schemas/ResultRecord" }
+    JobRequest:
+      allOf:
+        - $ref: "#/components/schemas/WorkFields"
+        - type: object
+          required: [input]
+          properties:
+            input:
+              type: object
+              description: "The input of the capability: FoodInput or ImageToolInput."
+    JobState:
+      enum: [waiting, running, succeeded, failed, cancelled]
+    Job:
+      type: object
+      required: [id, app, function, lane, state, wait, progress, createdAt, startedAt, finishedAt, result, outputs, record, error]
+      properties:
+        id: { type: string }
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        lane: { $ref: "#/components/schemas/Lane" }
+        model: { oneOf: [{ $ref: "#/components/schemas/ModelPin" }, { type: "null" }] }
+        batchKey: { oneOf: [{ $ref: "#/components/schemas/BatchKey" }, { type: "null" }] }
+        state: { $ref: "#/components/schemas/JobState" }
+        wait: { oneOf: [{ $ref: "#/components/schemas/Wait" }, { type: "null" }] }
+        progress:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [done, total, unit]
+              properties:
+                done: { type: number, minimum: 0 }
+                total: { type: number, minimum: 0 }
+                unit: { type: string, examples: [images, tiles, bytes] }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: [string, "null"], format: date-time }
+        finishedAt: { type: [string, "null"], format: date-time }
+        result:
+          description: "The output of the capability (FoodOutput, ImageToolOutput) when the job succeeded."
+          type: [object, "null"]
+        outputs:
+          type: array
+          items:
+            type: object
+            required: [name, mediaType, bytes, sha256, preview]
+            properties:
+              name: { type: string }
+              mediaType: { type: string }
+              bytes: { type: integer, minimum: 0 }
+              sha256: { $ref: "#/components/schemas/Sha256" }
+              preview: { type: boolean }
+        record: { oneOf: [{ $ref: "#/components/schemas/ResultRecord" }, { type: "null" }] }
+        error: { oneOf: [{ $ref: "#/components/schemas/Error" }, { type: "null" }] }
+    JobEnvelope:
+      type: object
+      required: [job]
+      properties:
+        job: { $ref: "#/components/schemas/Job" }
+    LeaseRequest:
+      allOf:
+        - $ref: "#/components/schemas/WorkFields"
+        - type: object
+          required: [device, memoryBytes]
+          properties:
+            device: { type: string, pattern: "^gpu(:[0-9]+)?$", description: "gpu for any GPU, or gpu:<index>." }
+            memoryBytes: { type: integer, minimum: 0, description: The device memory that the app expects to use. }
+    Lease:
+      type: object
+      required: [id, app, function, lane, state, device, wait, yieldBy, expiresAt]
+      properties:
+        id: { type: string }
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        lane: { $ref: "#/components/schemas/Lane" }
+        model: { oneOf: [{ $ref: "#/components/schemas/ModelPin" }, { type: "null" }] }
+        batchKey: { oneOf: [{ $ref: "#/components/schemas/BatchKey" }, { type: "null" }] }
+        state: { enum: [waiting, granted, yielding, ended] }
+        device: { type: [string, "null"] }
+        wait: { oneOf: [{ $ref: "#/components/schemas/Wait" }, { type: "null" }] }
+        yieldBy: { type: [string, "null"], format: date-time }
+        expiresAt: { type: string, format: date-time }
+    LeaseEnvelope:
+      type: object
+      required: [lease]
+      properties:
+        lease: { $ref: "#/components/schemas/Lease" }
+    QueueItem:
+      type: object
+      required: [id, type, app, function, lane, state, wait, since]
+      properties:
+        id: { type: string }
+        type: { enum: [run, job, lease, session] }
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        lane: { $ref: "#/components/schemas/Lane" }
+        model: { oneOf: [{ $ref: "#/components/schemas/ModelPin" }, { type: "null" }] }
+        batchKey: { oneOf: [{ $ref: "#/components/schemas/BatchKey" }, { type: "null" }] }
+        state: { enum: [waiting, running] }
+        wait: { oneOf: [{ $ref: "#/components/schemas/Wait" }, { type: "null" }] }
+        since: { type: string, format: date-time }
+    SessionRequest:
+      type: object
+      required: [app, function, modalities]
+      properties:
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        modalities:
+          type: array
+          minItems: 1
+          items: { enum: [audio, image] }
+        instructions: { type: string }
+        voice: { type: string }
+      additionalProperties: false
+    Session:
+      type: object
+      required: [id, function, pipeline, backend, expiresAt, url]
+      properties:
+        id: { type: string }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        pipeline: { enum: [node, relay] }
+        backend: { type: [string, "null"], description: The backend id for a relay. }
+        expiresAt: { type: string, format: date-time, description: Open the WebSocket before this time. }
+        url: { type: string, examples: ["/v1/realtime?session=ss_19ab"] }
+    Pack:
+      type: object
+      required: [id, title, kind, state, active, versions, license, install, path, usedBy]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        kind: { enum: [model, map, data, corpus, tool] }
+        state: { enum: [not-installed, installing, installed, needs-acceptance, refused] }
+        active: { type: [string, "null"], description: The active version. }
+        versions:
+          type: array
+          items:
+            type: object
+            required: [version, digest, bytes, installed]
+            properties:
+              version: { type: string }
+              digest: { $ref: "#/components/schemas/Sha256" }
+              bytes: { type: integer, minimum: 0 }
+              installed: { type: boolean }
+        license:
+          type: object
+          description: The license object of the manifest (schemas/packs/pack.json).
+        acceptance:
+          type: object
+          required: [needed, textSha256]
+          properties:
+            needed: { type: boolean }
+            textSha256: { oneOf: [{ $ref: "#/components/schemas/Sha256" }, { type: "null" }] }
+        install:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [version, bytesDone, bytesTotal, startedAt]
+              properties:
+                version: { type: string }
+                phase: { enum: [downloading, verifying, activating, done, failed] }
+                bytesDone: { type: integer, minimum: 0 }
+                bytesTotal: { type: integer, minimum: 0 }
+                startedAt: { type: string, format: date-time }
+                error: { oneOf: [{ $ref: "#/components/schemas/PackProgressError" }, { type: "null" }] }
+        path: { type: [string, "null"], description: The folder of the active version. }
+        usedBy:
+          type: array
+          items: { $ref: "#/components/schemas/AppId" }
+        manifest: { $ref: "../schemas/packs/pack.json" }
+    PackLocation:
+      type: object
+      required: [path, move, warning]
+      properties:
+        path: { type: string }
+        move:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [to, bytesDone, bytesTotal]
+              description: The last move; it stays after it ends.
+              properties:
+                to: { type: string }
+                phase: { enum: [copying, checking, removing, done, failed] }
+                bytesDone: { type: integer, minimum: 0 }
+                bytesTotal: { type: integer, minimum: 0 }
+                error: { oneOf: [{ $ref: "#/components/schemas/PackProgressError" }, { type: "null" }] }
+        warning:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [client]
+              properties:
+                client: { type: string, description: The sync client that covers the folder. }
+                text: { type: string }
+        target:
+          type: object
+          description: For a move that starts, the new folder and its sync warning.
+          properties:
+            path: { type: string }
+            warning:
+              oneOf:
+                - type: "null"
+                - type: object
+                  required: [client]
+                  properties:
+                    client: { type: string }
+                    text: { type: string }
+    PackProgressError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+    BackendModel:
+      type: object
+      required: [id, capabilities]
+      properties:
+        id: { type: string }
+        capabilities:
+          type: array
+          items: { enum: [chat, vision, embed.text, stt, tts, realtime] }
+    Backend:
+      type: object
+      required: [id, type, url, label, local, state, models, concurrency, hasKey]
+      properties:
+        id: { type: string }
+        type: { enum: [openai, node] }
+        url: { type: string, format: uri }
+        label: { type: string }
+        local: { type: boolean, description: True for a loopback or private address. }
+        state: { enum: [available, unavailable] }
+        models:
+          type: array
+          items: { $ref: "#/components/schemas/BackendModel" }
+        concurrency: { type: integer, minimum: 1, description: The limit of calls from Node at the same time now. }
+        concurrencyFrom: { enum: [set, reported, learned] }
+        hasKey: { type: boolean }
+        lastProbeAt: { type: [string, "null"], format: date-time }
+    BackendCreate:
+      type: object
+      required: [url, type]
+      properties:
+        url: { type: string, format: uri }
+        type: { enum: [openai, node] }
+        label: { type: string }
+        apiKey: { type: string, writeOnly: true }
+        concurrency: { type: integer, minimum: 1 }
+      additionalProperties: false
+    BackendPatch:
+      type: object
+      properties:
+        label: { type: string }
+        apiKey: { type: [string, "null"], writeOnly: true, description: null removes the stored key. }
+        concurrency: { type: [integer, "null"], minimum: 1, description: The limit of the user. null removes it. }
+        models:
+          type: array
+          items: { $ref: "#/components/schemas/BackendModel" }
+          description: The capabilities that the user sets for each model.
+      additionalProperties: false
+    ModelUsed:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
+        version: { type: string }
+        sha256: { $ref: "#/components/schemas/Sha256" }
+        fingerprint: { $ref: "#/components/schemas/Sha256" }
+      oneOf:
+        - required: [sha256]
+        - required: [fingerprint]
+      additionalProperties: false
+    ResultRecord:
+      type: object
+      required: [node, app, function, capability, route, engine, backend, models, device, lane, batchKey, queuedMs, runMs, finishedAt]
+      properties:
+        node:
+          type: object
+          required: [id, version]
+          properties:
+            id: { type: string }
+            version: { type: string }
+        app: { $ref: "#/components/schemas/AppId" }
+        function: { $ref: "#/components/schemas/FunctionId" }
+        capability: { type: string }
+        route: { enum: [auto, url, node] }
+        engine: { enum: [onnx, generative, backend] }
+        backend:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [id, type, url]
+              properties:
+                id: { type: string }
+                type: { enum: [openai, node] }
+                url: { type: string, format: uri }
+        models:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ModelUsed" }
+        device: { type: [string, "null"] }
+        lane: { $ref: "#/components/schemas/Lane" }
+        batchKey: { oneOf: [{ $ref: "#/components/schemas/BatchKey" }, { type: "null" }] }
+        queuedMs: { type: integer, minimum: 0 }
+        runMs: { type: integer, minimum: 0 }
+        finishedAt: { type: string, format: date-time }
+    EmbedTextInput:
+      type: object
+      required: [texts, type]
+      properties:
+        texts: { type: array, minItems: 1, maxItems: 256, items: { type: string } }
+        type: { enum: [query, passage] }
+      additionalProperties: false
+    ImagesInput:
+      type: object
+      required: [images]
+      properties:
+        images: { type: array, minItems: 1, maxItems: 64, items: { $ref: "#/components/schemas/Bytes" } }
+      additionalProperties: false
+    ImageTagsInput:
+      type: object
+      required: [images]
+      properties:
+        images: { type: array, minItems: 1, maxItems: 64, items: { $ref: "#/components/schemas/Bytes" } }
+        labels: { type: array, items: { type: string } }
+      additionalProperties: false
+    EmbedOutput:
+      type: object
+      required: [vectors, dims]
+      properties:
+        vectors: { type: array, items: { type: array, items: { type: number } }, description: "L2-normalized, one for each input." }
+        dims: { type: integer, minimum: 1 }
+    Box:
+      type: array
+      description: "[x, y, width, height] in pixels of the input image."
+      prefixItems: [{ type: number }, { type: number }, { type: number }, { type: number }]
+      minItems: 4
+      maxItems: 4
+    ImageTagsOutput:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [tags]
+            properties:
+              tags:
+                type: array
+                items:
+                  type: object
+                  required: [label, score]
+                  properties:
+                    label: { type: string }
+                    score: { type: number }
+    OcrOutput:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [text, lines]
+            properties:
+              text: { type: string }
+              lines:
+                type: array
+                items:
+                  type: object
+                  required: [text, box, score]
+                  properties:
+                    text: { type: string }
+                    box: { $ref: "#/components/schemas/Box" }
+                    score: { type: number }
+    FacesOutput:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [faces]
+            properties:
+              faces:
+                type: array
+                items:
+                  type: object
+                  required: [box, score, landmarks, vector]
+                  properties:
+                    box: { $ref: "#/components/schemas/Box" }
+                    score: { type: number }
+                    landmarks: { type: array, items: { type: array, prefixItems: [{ type: number }, { type: number }], minItems: 2, maxItems: 2 } }
+                    vector: { type: array, items: { type: number } }
+    SensitivityOutput:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [sensitive, score]
+            properties:
+              sensitive: { type: boolean }
+              score: { type: number, minimum: 0, maximum: 1 }
+    FoodInput:
+      type: object
+      required: [images]
+      properties:
+        images: { type: array, minItems: 1, maxItems: 8, items: { $ref: "#/components/schemas/Bytes" }, description: The photos of one meal. }
+        takenAt: { type: string, format: date-time }
+      additionalProperties: false
+    Estimate:
+      type: object
+      required: [value, low, high]
+      properties:
+        value: { type: number, minimum: 0 }
+        low: { type: number, minimum: 0 }
+        high: { type: number, minimum: 0 }
+    FoodOutput:
+      type: object
+      required: [food, reading, items, nutrients]
+      properties:
+        food: { type: boolean, description: The food check. }
+        foodScore: { type: number, minimum: 0, maximum: 1 }
+        blend: { type: string, description: The blend weights that made the values. Absent unless reading is done. }
+        reading: { enum: [done, "off", skipped], description: "off when no reading model can run; skipped when the food check found no food." }
+        items:
+          type: array
+          items:
+            type: object
+            required: [name, grams]
+            properties:
+              name: { type: string }
+              grams: { $ref: "#/components/schemas/Estimate" }
+        nutrients:
+          oneOf:
+            - type: "null"
+            - type: object
+              description: Grams, except kcal.
+              required: [kcal, protein, fat, carbs]
+              properties:
+                kcal: { $ref: "#/components/schemas/Estimate" }
+                protein: { $ref: "#/components/schemas/Estimate" }
+                fat: { $ref: "#/components/schemas/Estimate" }
+                carbs: { $ref: "#/components/schemas/Estimate" }
+                sugar: { $ref: "#/components/schemas/Estimate" }
+                fiber: { $ref: "#/components/schemas/Estimate" }
+                alcohol: { $ref: "#/components/schemas/Estimate" }
+    ImageToolInput:
+      type: object
+      required: [image]
+      properties:
+        image: { $ref: "#/components/schemas/Bytes" }
+        scale: { enum: [2, 4], description: image.upscale only. }
+      additionalProperties: false
+    ImageToolOutput:
+      type: object
+      required: [recipe]
+      description: The image is the job output named "image" (16-bit PNG).
+      properties:
+        recipe:
+          type: object
+          required: [capability, models, tiles, input, output]
+          properties:
+            capability: { type: string }
+            models: { type: array, items: { $ref: "#/components/schemas/ModelUsed" } }
+            tiles: { type: integer, minimum: 1 }
+            input:
+              type: object
+              required: [sha256, width, height]
+              properties:
+                sha256: { $ref: "#/components/schemas/Sha256" }
+                width: { type: integer }
+                height: { type: integer }
+            output:
+              type: object
+              required: [width, height]
+              properties:
+                width: { type: integer }
+                height: { type: integer }
+    OpenAIObject:
+      type: object
+      description: A request or response body of the OpenAI API. Node does not restate it.
+      additionalProperties: true
+    OpenAIResponse:
+      type: object
+      description: An OpenAI response body with the added field memex.
+      properties:
+        memex: { $ref: "#/components/schemas/ResultRecord" }
+      additionalProperties: true

@@ -1,0 +1,62 @@
+{
+  "record": {
+    "id": "trip_be3b7aabcbc567ddfdcace1a9d735bf4",
+    "kind": "trip",
+    "version": 4,
+    "state": "active",
+    "origin": "inferred",
+    "confidence": 0.92,
+    "review": false,
+    "fields": {
+      "title": "Lisbon with Sam",
+      "firstDay": "2025-05-02",
+      "lastDay": "2025-05-08",
+      "destinations": [
+        {
+          "name": "Lisbon",
+          "town": "Lisbon",
+          "country": "PT",
+          "location": { "lat": 38.7223, "lon": -9.1393, "radiusM": 8000 }
+        }
+      ],
+      "countries": ["PT"],
+      "participants": [
+        "person_4c1029697ee358715d3a14a2add817c4",
+        { "app": "contacts", "kind": "person", "id": "ct_sam" }
+      ],
+      "home": "home_4ea140588150773ce3aace786aeef7f4"
+    },
+    "provenance": {
+      "title": [{ "correction": "cor_d0f631ca1ddba8db3bcfcb9e057cdc98" }],
+      "firstDay": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "lastDay": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "destinations": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "countries": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "participants": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "home": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "participants/0": [{ "scope": "photos.trips", "key": "trip-1842" }],
+      "participants/1": [{ "scope": "photos.trips", "key": "trip-1842" }]
+    },
+    "alternatives": {
+      "title": [
+        {
+          "value": "Lisbon",
+          "from": [{ "scope": "photos.trips", "key": "trip-1842" }],
+          "reason": "weaker"
+        }
+      ]
+    },
+    "corrected": ["title"],
+    "claims": [
+      {
+        "scope": "photos.trips",
+        "key": "trip-1842",
+        "confidence": 0.92,
+        "seen": { "first": "2025-05-02T08:14:00Z", "last": "2025-05-08T19:30:00Z" }
+      }
+    ],
+    "sources": [{ "app": "photos", "kind": "trip", "id": "trip-1842" }],
+    "createdAt": "2026-11-18T09:00:00Z",
+    "updatedAt": "2026-11-20T17:42:10Z"
+  }
+}

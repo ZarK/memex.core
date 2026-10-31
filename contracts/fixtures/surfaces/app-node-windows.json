@@ -1,0 +1,13 @@
+{
+  "format": "memex.app/1",
+  "app": "node",
+  "name": "Memex Node",
+  "kind": "service",
+  "version": "1.0.0",
+  "executable": "C:\\Users\\alex\\AppData\\Local\\Programs\\Memex\\Node\\1.0.0\\memex-node.exe",
+  "running": {
+    "pid": 9120,
+    "startedAt": "2026-11-10T08:00:02Z",
+    "socket": "\\\\.\\pipe\\memex-node-5f0c2a9e7b1d4c38a6e2f9071b3d8c4e"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "retiredVariables() cases. The result lists the retired variables that are set and not empty, in the order of the contract table.",
+  "cases": [
+    { "name": "none set", "env": { "MEMEX_HOME": "/tmp/mx" }, "expected": [] },
+    {
+      "name": "several set",
+      "env": { "MEMEX_INSTANCE_DIR": "D:\\inst", "FINANCE_DB": "D:\\f.db", "AIW_TOOLS": "x", "MEMEX_THUMBNAIL_CACHE_ROOT": "T:\\thumbs", "HEALTH_DATA": "" },
+      "expected": [
+        { "name": "FINANCE_DB", "replacement": "MEMEX_FINANCE_HOME" },
+        { "name": "AIW_TOOLS", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "MEMEX_THUMBNAIL_CACHE_ROOT", "replacement": null },
+        { "name": "MEMEX_INSTANCE_DIR", "replacement": "MEMEX_HOME" }
+      ]
+    },
+    {
+      "name": "all set",
+      "env": {
+        "FINANCE_DB": "1", "HEALTH_HOME": "1", "HEALTH_DATA": "1", "HEALTH_PREFERENCES": "1",
+        "AIW_DB": "1", "AIW_PROVIDERS": "1", "AIW_TOOLS": "1", "AIW_ARTIFACT_ROOT": "1", "AIW_HIMALAYA_CONFIG": "1",
+        "DASHBOARD_DB_PATH": "1", "DASHBOARD_WORKFLOW_DIR": "1", "MEMEX_PHOTOS_LIBRARY": "1", "MEMEX_MODELS_ROOT": "1",
+        "MEMEX_GEODATA_ROOT": "1", "MEMEX_THUMBNAIL_CACHE_ROOT": "1", "MEMEX_STUDY_LIBRARY": "1", "MEMEX_INSTANCE_DIR": "1"
+      },
+      "expected": [
+        { "name": "FINANCE_DB", "replacement": "MEMEX_FINANCE_HOME" },
+        { "name": "HEALTH_HOME", "replacement": "MEMEX_HEALTH_HOME" },
+        { "name": "HEALTH_DATA", "replacement": "MEMEX_HEALTH_HOME" },
+        { "name": "HEALTH_PREFERENCES", "replacement": "MEMEX_HEALTH_HOME" },
+        { "name": "AIW_DB", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "AIW_PROVIDERS", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "AIW_TOOLS", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "AIW_ARTIFACT_ROOT", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "AIW_HIMALAYA_CONFIG", "replacement": "MEMEX_WORKSPACE_HOME" },
+        { "name": "DASHBOARD_DB_PATH", "replacement": "MEMEX_STUDIO_HOME" },
+        { "name": "DASHBOARD_WORKFLOW_DIR", "replacement": "MEMEX_STUDIO_HOME" },
+        { "name": "MEMEX_PHOTOS_LIBRARY", "replacement": "MEMEX_PHOTOS_HOME" },
+        { "name": "MEMEX_MODELS_ROOT", "replacement": "MEMEX_PACKS_DIR" },
+        { "name": "MEMEX_GEODATA_ROOT", "replacement": "MEMEX_PACKS_DIR" },
+        { "name": "MEMEX_THUMBNAIL_CACHE_ROOT", "replacement": null },
+        { "name": "MEMEX_STUDY_LIBRARY", "replacement": "MEMEX_STUDY_HOME" },
+        { "name": "MEMEX_INSTANCE_DIR", "replacement": "MEMEX_HOME" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "@tjalve/memex-facts",
+  "version": "0.1.0",
+  "description": "Memex facts engine: claims per producer scope, joins by kind, combining with provenance per field, corrections that survive re-inference, and the change feed, on SQLite. Memex.User and Memex.Contacts both run it.",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/facts"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/facts#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "memex-facts": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@tjalve/memex-schema": "workspace:*",
+    "@tjalve/memex-sqlite": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11",
+    "yaml": "2.9.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

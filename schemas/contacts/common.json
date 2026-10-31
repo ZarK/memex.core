@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/common.json",
+  "title": "Memex.Contacts shared definitions",
+  "description": "Values that more than one Contacts record kind uses. See contracts/contacts-records.md.",
+  "$defs": {
+    "kind": { "enum": ["person", "home", "workplace", "circle", "relation", "date", "identity"] },
+    "factKind": {
+      "enum": ["person", "home", "workplace", "circle", "relation", "date", "identity"],
+      "description": "The kinds that claims can have. Only Contacts itself writes person claims (scope contacts.persons, one per source card)."
+    },
+    "recordId": {
+      "type": "string",
+      "pattern": "^(person|home|workplace|circle|relation|date|identity)_[0-9a-f]{32}$"
+    },
+    "personId": {
+      "type": "string",
+      "pattern": "^person_[0-9a-f]{32}$",
+      "description": "A Contacts person. A merged person keeps its id as a redirect (mergedInto)."
+    },
+    "cardId": {
+      "type": "string",
+      "pattern": "^card_[0-9a-f]{32}$",
+      "description": "A source card in Contacts: one card of one address book, over all its revisions."
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*\\.(persons|homes|workplaces|circles|relations|dates|identities)$",
+      "description": "<app>.<kinds>, for example contacts.homes or photos.circles. contacts.persons is for Contacts itself."
+    },
+    "handle": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 320,
+      "pattern": "^(\\+[1-9][0-9]{6,14}|[^@\\s]+@[^@\\s]+|[a-z][a-z0-9]*:\\S+)$",
+      "description": "A normalized handle: E.164 for a phone, a lowercase address for e-mail, or <service>:<name>, as contracts/message.md normalizes them."
+    },
+    "subject": {
+      "description": "The identity that the producer knows. Contacts resolves it to a person at fusion, and again after each merge, unmerge, or handle correction. A shared or unparsed handle never resolves.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["person"],
+          "properties": { "person": { "$ref": "#/$defs/personId" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["card"],
+          "properties": { "card": { "$ref": "#/$defs/cardId" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["handle", "at"],
+          "properties": {
+            "handle": { "$ref": "#/$defs/handle" },
+            "at": {
+              "$ref": "../user/common.json#/$defs/utcTime",
+              "description": "The time of the evidence, so that a reused number resolves by its date."
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "resident": {
+      "type": "object",
+      "required": ["person"],
+      "properties": {
+        "person": { "$ref": "#/$defs/personId" },
+        "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+        "to": { "$ref": "../user/common.json#/$defs/partialDate" },
+        "child": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "kindFields": {
+      "description": "The fields object of an instance, checked against the schema of its kind.",
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "person" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "person.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "home" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "home.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "workplace" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "workplace.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "circle" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "circle.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "relation" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "relation.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "date" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "date.json" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "identity" } }, "required": ["kind"] },
+          "then": { "properties": { "fields": { "$ref": "identity.json" } } }
+        }
+      ]
+    }
+  }
+}

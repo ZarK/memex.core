@@ -1,0 +1,28 @@
+{
+  "name": "memex-desktop-hello",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Memex Hello: the smallest app on the Memex desktop shell, for trying the shell and its installers",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "memex-desktop pack",
+    "pack:dir": "memex-desktop pack --dir"
+  },
+  "dependencies": {
+    "@tjalve/memex-desktop": "workspace:*",
+    "@tjalve/memex-node-client": "workspace:*",
+    "@tjalve/memex-storage": "workspace:*",
+    "@tjalve/memex-surfaces": "workspace:*",
+    "@tjalve/memex-user-client": "workspace:*",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@tjalve/memex-licenses": "workspace:*",
+    "electron": "44.7.0",
+    "electron-builder": "26.17.0"
+  }
+}

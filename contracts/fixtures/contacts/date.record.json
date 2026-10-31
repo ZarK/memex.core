@@ -1,0 +1,41 @@
+{
+  "id": "date_d64996479f5523b9b17e1b3d56dc8568",
+  "kind": "date",
+  "version": 2,
+  "state": "active",
+  "origin": "inferred",
+  "person": "person_bb472edb86809a761936d90c70aeb434",
+  "confidence": 0.95,
+  "review": false,
+  "fields": { "type": "birthday", "date": "1984-03-12" },
+  "provenance": {
+    "type": [{ "scope": "contacts.dates", "key": "card_f8bd9d9b97259addc818793929b06c90:bday" }],
+    "date": [
+      { "correction": "cor_f089ad786d55f5221054371cac33392c" },
+      { "scope": "contacts.dates", "key": "card_f8bd9d9b97259addc818793929b06c90:bday" }
+    ]
+  },
+  "alternatives": {
+    "date": [
+      {
+        "value": "--03-12",
+        "from": [
+          { "scope": "contacts.dates", "key": "card_f8bd9d9b97259addc818793929b06c90:bday" }
+        ],
+        "reason": "coarser"
+      }
+    ]
+  },
+  "corrected": ["date"],
+  "claims": [
+    {
+      "scope": "contacts.dates",
+      "key": "card_f8bd9d9b97259addc818793929b06c90:bday",
+      "confidence": 0.95,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" }
+    }
+  ],
+  "sources": [{ "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }],
+  "createdAt": "2026-11-16T10:00:00Z",
+  "updatedAt": "2026-11-21T12:30:00Z"
+}

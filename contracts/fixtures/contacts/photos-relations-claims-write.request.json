@@ -1,0 +1,16 @@
+{
+  "scope": "photos.relations",
+  "claims": [
+    {
+      "key": "relation:partner:person_bb472edb86809a761936d90c70aeb434:person_55579b557896d0ce1764c47fed644f9b",
+      "kind": "relation",
+      "subject": { "person": "person_bb472edb86809a761936d90c70aeb434" },
+      "other": { "person": "person_55579b557896d0ce1764c47fed644f9b" },
+      "confidence": 1,
+      "method": "user:photos-relation/1",
+      "generation": 9,
+      "fields": { "type": "partner", "from": "2016" },
+      "sources": [{ "app": "photos", "kind": "relation", "id": "rel_4" }]
+    }
+  ]
+}

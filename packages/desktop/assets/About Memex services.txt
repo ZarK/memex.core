@@ -1,0 +1,9 @@
+Memex services
+
+This app carries the shared Memex services: Memex Node (local AI models) and Memex User (the facts that your Memex apps share about you).
+
+At its first start, the app copies them into ~/Library/Application Support/Memex/Services. All your Memex apps use that one copy, and the newest version wins. The services start when an app needs them and stop when they are idle.
+
+The services folder holds programs only. Your data stays in ~/Memex, and downloaded models stay in the pack store. Neither is changed when apps or services are removed.
+
+To remove an app, move it to the Trash. The next start of another Memex app notices that it is gone. When you remove your last Memex app, you can also move ~/Library/Application Support/Memex/Services to the Trash.

@@ -1,0 +1,83 @@
+name: Memex desktop draft release
+
+# The last step of a desktop release. An app repository calls it after desktop-release.yml and its own checks, in the
+# same workflow run, pinned by the same full commit SHA of memex.core:
+#
+#   uses: ZarK/memex.core/.github/workflows/desktop-draft-release.yml@<40-character SHA>
+#
+# It makes a draft GitHub release (a prerelease for an rc tag) from the checked release set of the run. The owner
+# publishes the draft.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag output of desktop-release.yml
+        type: string
+        required: true
+      prerelease:
+        description: The prerelease output of desktop-release.yml
+        type: string
+        required: true
+      attested:
+        description: The attested output of desktop-release.yml
+        type: string
+        required: true
+      artifact-base:
+        description: The same artifact-base as for desktop-release.yml
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  draft-release:
+    name: Draft release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    steps:
+      # No checkout: nothing from the repository runs with write permission.
+      - name: Download the release set
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: desktop-release-set
+          path: ${{ runner.temp }}/release-set
+      - name: Create the draft release (the owner publishes it)
+        working-directory: ${{ runner.temp }}/release-set
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          ATTESTED: ${{ inputs.attested }}
+          BASE: ${{ inputs.artifact-base }}
+        run: |
+          set -euo pipefail
+          [ -n "$TAG" ] || { echo "::error::No tag: call this workflow only for a release (needs.<job>.outputs.release)."; exit 1; }
+          sha256sum -c SHA256SUMS.txt
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "::error::A release for $TAG exists already; this workflow never changes one."
+            exit 1
+          fi
+          mapfile -t assets < <(sed -E 's/^[0-9a-f]{64}  //' SHA256SUMS.txt)
+          product="${BASE//./ }"
+          {
+            printf '%s %s.\n\n' "$product" "${TAG#v}"
+            if [ "$PRERELEASE" = true ]; then printf 'This is a release candidate for the beta channel.\n\n'; fi
+            printf 'Check a download with: sha256sum -c SHA256SUMS.txt --ignore-missing\n\n'
+            if [ "$ATTESTED" = success ]; then
+              printf 'Check where an installer was built with: gh attestation verify <installer> --repo %s\n\n' "$GH_REPO"
+            else
+              printf 'These installers have no build provenance attestation: GitHub makes them only for public repositories.\n\n'
+            fi
+            printf '## Opening the app (the installers are not signed yet)\n\n'
+            printf -- '- Windows: when SmartScreen says "Windows protected your PC", choose "More info", then "Run anyway".\n'
+            printf -- '- macOS: open the app once. When macOS blocks it, open System Settings, Privacy & Security, choose "Open Anyway" for the app, and open it again.\n'
+            printf -- '- Linux: no extra step.\n'
+          } > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+          flags=(--draft --verify-tag)
+          if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
+          gh release create "$TAG" "${flags[@]}" --title "$product ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" "${assets[@]}" SHA256SUMS.txt

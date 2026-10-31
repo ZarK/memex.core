@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/milestone.json",
+  "title": "Milestone fields",
+  "description": "A dated event, for example a loan paid off.",
+  "type": "object",
+  "required": ["title", "date"],
+  "properties": {
+    "title": { "$ref": "common.json#/$defs/text" },
+    "date": { "$ref": "common.json#/$defs/partialDate" },
+    "persons": { "type": "array", "items": { "$ref": "common.json#/$defs/personRef" } }
+  },
+  "additionalProperties": false
+}

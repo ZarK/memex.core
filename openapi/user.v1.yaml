@@ -1,0 +1,722 @@
+openapi: "3.1.0"
+info:
+  title: Memex.User API
+  version: "1"
+  summary: Facts about the owner, fused from the claims of every app, with corrections and a change feed.
+  description: |-
+    The contract text is contracts/user-records.md (version 2). The rules that Memex.User shares with
+    Memex.Contacts (claims, joins, combining, provenance, corrections, the outbox, and the change feed)
+    are in contracts/facts.md. The record shapes are in schemas/user/ and schemas/facts/.
+
+    User follows contracts/surfaces.md like every app: it listens on 127.0.0.1 on a port that the
+    OS gives, with a new token at each launch, and the app record <apps>/user.json gives running.url and
+    running.tokenFile. Every call except /health sends "Authorization: Bearer <token>". User has no pipe
+    or socket. It runs on its own pinned Node.js runtime. Errors use the one error body of
+    contracts/surfaces.md.
+
+    Homes, workplaces, and named places that the person enters are records that the person made
+    (create, set, clear, reject, restore), never claims. An edit of the person is always accepted:
+    the app saves it in its own database with the correction in a durable outbox, and a background sync
+    sends the outbox to User, with retries, whenever User can be reached.
+  license: { name: "MIT", identifier: "MIT" }
+servers:
+  - url: "http://127.0.0.1:{port}"
+    variables: { port: { default: "0", description: "running.url in <apps>/user.json." } }
+security: [{ bearer: [] }]
+tags:
+  - { name: "service" }
+  - { name: "claims" }
+  - { name: "corrections" }
+  - { name: "changes" }
+  - { name: "persons" }
+  - { name: "homes" }
+  - { name: "workplaces" }
+  - { name: "places" }
+  - { name: "stays" }
+  - { name: "trips" }
+  - { name: "chapters" }
+  - { name: "milestones" }
+paths:
+  /health:
+    get:
+      tags: ["service"]
+      operationId: getHealth
+      summary: Health without paths or user data
+      security: []
+      responses:
+        "200":
+          description: User runs.
+          content: { application/json: { schema: { $ref: "#/components/schemas/Health" } } }
+        "421": { $ref: "#/components/responses/Error" }
+  /v1/drain:
+    post:
+      tags: ["service"]
+      operationId: drain
+      summary: A newer copy takes over (the service launcher, before it starts the newer copy)
+      description: "User stops taking new work, gives up its single-instance lock, and never writes the app record again. It answers GET /health with status draining and refuses every other request with 503 draining before it starts any work. It finishes the calls that it holds, and stops when it holds none, or after its drain time (60 seconds; memex-user serve --drain-timeout-seconds). A repeated drain gets the same answer. The generated clients leave this operation out: only the service launcher sends it (contracts/surfaces.md, Service launcher)."
+      responses:
+        "202":
+          description: User drains. It no longer holds the single-instance lock, so a newer copy can start.
+          content: { application/json: { schema: { $ref: "#/components/schemas/Drain" } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1:
+    get:
+      tags: ["service"]
+      operationId: listCapabilities
+      summary: The capabilities of User
+      responses:
+        "200":
+          description: Capabilities.
+          content: { application/json: { schema: { $ref: "#/components/schemas/CapabilityList" } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/openapi.json:
+    get:
+      tags: ["service"]
+      operationId: getOpenApi
+      summary: This API as OpenAPI 3.1 JSON
+      responses:
+        "200": { description: "OpenAPI.", content: { application/json: { schema: { type: "object" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.claims.write:
+    post:
+      tags: ["claims"]
+      operationId: claimsWrite
+      summary: user.claims.write
+      description: "Replace the claims of one scope, or of one partition of a scope. Claims of the scope that are not in the request are withdrawn. Every claim of a request has the same generation; a request with a lower generation than the last one of the scope or partition is refused with 409 conflict (code stale-generation), so a late retry never replaces newer claims. HTTP only; not on MCP. Kind: write."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ClaimsWriteInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/ClaimsWriteOutput" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/user.claims.list:
+    post:
+      tags: ["claims"]
+      operationId: claimsList
+      summary: user.claims.list
+      description: "List the claims of one scope, with the record of each claim. Kind: read. MCP tool: user_claims_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ClaimsListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/ClaimsListOutput" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.corrections.write:
+    post:
+      tags: ["corrections"]
+      operationId: correctionsWrite
+      summary: user.corrections.write
+      description: "Store corrections of the user (at most 500). Inference never changes them. Each correction has the id and createdAt that the app made when the person acted. User stores each id once: a correction with an id that User has stored returns the earlier correction and its result now, with repeat true, and stores nothing new. User orders corrections by createdAt, then by arrival; for the same field of the same record, the later createdAt wins, and every correction stays in the history. A create with sources is a repeat when an earlier create has the same kind, sources, and fields: it returns the earlier correction, with record set to the record that holds the fact now (the merge target after a merge), and makes no new record; User stores the new id as an alias of the earlier correction, and the result has the new id and repeatOf. results gives one result for each correction, in request order, and results[i].id is always the id of the i-th correction of the request: applied, superseded (a later createdAt wins completely), or held (stored, not applied, with a reason: required-field, record-rejected, record-removed, or unknown-record). User never drops a correction and has no 404, 409, or 422 here; 400 means the request is wrong and nothing is stored. Kind: write. MCP tool: user_corrections_write."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CorrectionsWriteInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/CorrectionsWriteOutput" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.corrections.list:
+    post:
+      tags: ["corrections"]
+      operationId: correctionsList
+      summary: user.corrections.list
+      description: "List corrections, for one record or all of them, in the order of User: by createdAt, then by arrival. Kind: read. MCP tool: user_corrections_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CorrectionsListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/CorrectionsListOutput" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.changes.list:
+    post:
+      tags: ["changes"]
+      operationId: changesList
+      summary: user.changes.list
+      description: "The change feed since a cursor. Without since, every record. Apps keep a mirror with it. Kind: read. MCP tool: user_changes_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ChangesListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/ChangesListOutput" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.persons.list:
+    post:
+      tags: ["persons"]
+      operationId: personsList
+      summary: user.persons.list
+      description: "List the owner's person record: User keeps one person, the owner. Other people are Contacts references. Kind: read. MCP tool: user_persons_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.persons.get:
+    post:
+      tags: ["persons"]
+      operationId: personsGet
+      summary: user.persons.get
+      description: "One person record by id. Kind: read. MCP tool: user_persons_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.homes.list:
+    post:
+      tags: ["homes"]
+      operationId: homesList
+      summary: user.homes.list
+      description: "List homes over time, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_homes_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.homes.get:
+    post:
+      tags: ["homes"]
+      operationId: homesGet
+      summary: user.homes.get
+      description: "One home record by id. Kind: read. MCP tool: user_homes_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.workplaces.list:
+    post:
+      tags: ["workplaces"]
+      operationId: workplacesList
+      summary: user.workplaces.list
+      description: "List workplaces with their sites and stints, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_workplaces_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.workplaces.get:
+    post:
+      tags: ["workplaces"]
+      operationId: workplacesGet
+      summary: user.workplaces.get
+      description: "One workplace record by id. Kind: read. MCP tool: user_workplaces_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.places.list:
+    post:
+      tags: ["places"]
+      operationId: placesList
+      summary: user.places.list
+      description: "List named places that the owner goes back to, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_places_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.places.get:
+    post:
+      tags: ["places"]
+      operationId: placesGet
+      summary: user.places.get
+      description: "One place record by id. Kind: read. MCP tool: user_places_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.stays.list:
+    post:
+      tags: ["stays"]
+      operationId: staysList
+      summary: user.stays.list
+      description: "List stays, from arrival to departure, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_stays_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.stays.get:
+    post:
+      tags: ["stays"]
+      operationId: staysGet
+      summary: user.stays.get
+      description: "One stay record by id. Kind: read. MCP tool: user_stays_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.trips.list:
+    post:
+      tags: ["trips"]
+      operationId: tripsList
+      summary: user.trips.list
+      description: "List trips, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_trips_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.trips.get:
+    post:
+      tags: ["trips"]
+      operationId: tripsGet
+      summary: user.trips.get
+      description: "One trip record by id. Kind: read. MCP tool: user_trips_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.chapters.list:
+    post:
+      tags: ["chapters"]
+      operationId: chaptersList
+      summary: user.chapters.list
+      description: "List chapters, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_chapters_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.chapters.get:
+    post:
+      tags: ["chapters"]
+      operationId: chaptersGet
+      summary: user.chapters.get
+      description: "One chapter record by id. Kind: read. MCP tool: user_chapters_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.milestones.list:
+    post:
+      tags: ["milestones"]
+      operationId: milestonesList
+      summary: user.milestones.list
+      description: "List milestones, newest first. from and to match records whose dates overlap. Kind: read. MCP tool: user_milestones_list. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ListInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordPage" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+  /api/v1/user.milestones.get:
+    post:
+      tags: ["milestones"]
+      operationId: milestonesGet
+      summary: user.milestones.get
+      description: "One milestone record by id. Kind: read. MCP tool: user_milestones_get. GET with ?input=<json> works as well."
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GetInput" } } }
+      responses:
+        "200":
+          description: Result.
+          content: { application/json: { schema: { $ref: "#/components/schemas/RecordEnvelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+        "421": { $ref: "#/components/responses/Error" }
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: The token of this launch, from running.tokenFile.
+  responses:
+    Error:
+      description: The one error body of contracts/surfaces.md.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Error: { $ref: "../schemas/surfaces/error.json" }
+    Health:
+      type: object
+      required: ["status", "app", "version"]
+      properties:
+        status: { enum: ["ok", "draining"], description: "draining after POST /v1/drain: a newer copy takes over. A client reads the app record again." }
+        app: { const: "user" }
+        version: { type: "string" }
+    Drain:
+      type: object
+      required: ["draining", "pid", "version", "held"]
+      properties:
+        draining: { const: true }
+        pid: { type: "integer", minimum: 1, description: "The process that drains. It exits when held is 0, or after the drain time." }
+        version: { type: "string" }
+        held: { type: "integer", minimum: 0, description: "The calls that User still serves." }
+    CapabilityList:
+      type: object
+      required: ["app", "version", "capabilities", "openapi"]
+      properties:
+        app: { const: "user" }
+        version: { type: "string" }
+        openapi: { const: "/api/v1/openapi.json" }
+        capabilities:
+          type: array
+          items:
+            type: object
+            required: ["id", "title", "kind", "description"]
+            properties:
+              id: { type: "string" }
+              title: { type: "string" }
+              kind: { enum: ["read", "write"] }
+              description: { type: "string", maxLength: 600 }
+    Record: { $ref: "../schemas/user/record.json" }
+    Claim: { $ref: "../schemas/user/claim.json" }
+    Correction: { $ref: "../schemas/user/correction.json" }
+    Change: { $ref: "../schemas/user/change.json" }
+    ClaimsWriteInput:
+      type: object
+      required: ["scope", "claims"]
+      additionalProperties: false
+      properties:
+        scope: { $ref: "../schemas/user/common.json#/$defs/scope" }
+        partition: { $ref: "../schemas/user/common.json#/$defs/partition" }
+        claims:
+          type: array
+          maxItems: 5000
+          items: { $ref: "#/components/schemas/Claim" }
+          description: Every claim of the scope or partition. An empty list withdraws all of them.
+        generation:
+          type: integer
+          minimum: 1
+          description: The producer's run. Equal to the generation of the claims. Required with an empty claims list when the hub has a generation for the scope or partition.
+        dryRun: { type: "boolean", default: false, description: "Check and report; change nothing." }
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: A repeat with the same key returns the first result.
+    ClaimsWriteOutput:
+      type: object
+      required: ["changeId", "summary", "counts", "records"]
+      properties:
+        changeId: { type: ["string", "null"], description: "null for dryRun, or when nothing changed." }
+        summary: { type: "string" }
+        counts:
+          type: object
+          required: ["created", "updated", "unchanged", "withdrawn", "removed"]
+          properties:
+            created: { type: "integer", minimum: 0 }
+            updated: { type: "integer", minimum: 0 }
+            unchanged: { type: "integer", minimum: 0 }
+            withdrawn: { type: "integer", minimum: 0 }
+            removed: { type: "integer", minimum: 0 }
+          description: "created, updated, unchanged, and removed count records; withdrawn counts claims."
+        records:
+          type: array
+          description: The record id of each claim key.
+          items:
+            type: object
+            required: ["key", "id"]
+            properties:
+              key: { type: "string" }
+              id: { $ref: "../schemas/user/common.json#/$defs/recordId" }
+    ClaimsListInput:
+      type: object
+      required: ["scope"]
+      additionalProperties: false
+      properties:
+        scope: { $ref: "../schemas/user/common.json#/$defs/scope" }
+        partition: { $ref: "../schemas/user/common.json#/$defs/partition" }
+        limit: { type: "integer", minimum: 1, maximum: 5000, default: 500 }
+        cursor: { type: "string", description: "next of the previous page." }
+    ClaimsListOutput:
+      type: object
+      required: ["items", "next"]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: ["scope", "claim", "record", "writtenAt"]
+            properties:
+              scope: { type: "string" }
+              partition: { type: "string" }
+              claim: { $ref: "#/components/schemas/Claim" }
+              record: { $ref: "../schemas/user/common.json#/$defs/recordId" }
+              writtenAt: { type: "string", format: "date-time" }
+        next: { type: ["string", "null"], description: "null on the last page." }
+    CorrectionsWriteInput:
+      type: object
+      required: ["corrections"]
+      additionalProperties: false
+      properties:
+        corrections:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: "#/components/schemas/Correction" }
+          description: With the id and createdAt that the app made; without record for create. The background sync sends them in createdAt order.
+        dryRun: { type: "boolean", default: false, description: "Check and report; change nothing." }
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: A repeat with the same key returns the first result. Not needed for corrections, because User stores each correction id once.
+    CorrectionsWriteOutput:
+      type: object
+      required: ["changeId", "summary", "corrections", "results"]
+      properties:
+        changeId: { type: ["string", "null"], description: "null for dryRun, or when nothing new was stored." }
+        summary: { type: "string" }
+        corrections:
+          type: array
+          items: { $ref: "#/components/schemas/Correction" }
+          description: As stored, in request order. For a repeat, the correction that User stored earlier, with its own id.
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/CorrectionResult" }
+          description: One result for each correction of the request, in request order. results[i].id is the id of the i-th correction of the request, also for a repeat.
+    CorrectionResult:
+      type: object
+      required: ["id", "status", "repeat"]
+      additionalProperties: false
+      properties:
+        id:
+          $ref: "../schemas/user/common.json#/$defs/correctionId"
+          description: The id of the i-th correction of the request, also for a repeat. The app finds its outbox item by it.
+        status:
+          enum: ["applied", "superseded", "held"]
+          description: "applied: the correction applies (see overridden). superseded: corrections with a later createdAt win completely; it stays in the history. held: stored and not applied; see reason."
+        repeat: { type: "boolean", description: "true when User had stored this id, or this create, before. Nothing new is stored, except the new id of a repeated create as an alias." }
+        repeatOf:
+          $ref: "../schemas/user/common.json#/$defs/correctionId"
+          description: Only for a create that repeats an earlier create with another id. The id of the earlier correction. User stores the new id as its alias, so a later send of the new id is a repeat by id.
+        record:
+          $ref: "../schemas/user/common.json#/$defs/recordId"
+          description: The record that holds the fact now (the new record of a create, the merge target of a merged record, the first id of a merge). A held result has it whenever User knows the record.
+        version: { type: "integer", minimum: 1, description: "The version of record after the write." }
+        state: { enum: ["active", "rejected"], description: "The state of record after the write." }
+        overridden:
+          type: array
+          minItems: 1
+          items: { type: "string" }
+          uniqueItems: true
+          description: set or clear only. The fields for which a correction with a later createdAt wins.
+        reason:
+          type: object
+          required: ["code", "message"]
+          additionalProperties: false
+          properties:
+            code:
+              enum: ["required-field", "record-rejected", "record-removed", "unknown-record"]
+              description: "required-field: a clear would leave a required field without a value. record-rejected: a create repeats a create whose record the person rejected. record-removed: the record lost all its claims; User applies the correction again when it comes back. unknown-record: User does not know the record id."
+            message: { type: "string", description: "A sentence for the app." }
+      allOf:
+        - if: { properties: { status: { const: "held" } } }
+          then: { required: ["reason"] }
+          else: { not: { required: ["reason"] } }
+        - if: { required: ["repeatOf"] }
+          then: { properties: { repeat: { const: true } } }
+    CorrectionsListInput:
+      type: object
+      additionalProperties: false
+      properties:
+        record: { $ref: "../schemas/user/common.json#/$defs/recordId" }
+        limit: { type: "integer", minimum: 1, maximum: 5000, default: 500 }
+        cursor: { type: "string", description: "next of the previous page." }
+    CorrectionsListOutput:
+      type: object
+      required: ["items", "next"]
+      properties:
+        items: { type: "array", items: { $ref: "#/components/schemas/Correction" } }
+        next: { type: ["string", "null"], description: "null on the last page." }
+    ChangesListInput:
+      type: object
+      additionalProperties: false
+      properties:
+        since:
+          type: string
+          description: "The cursor of the last change that the app applied. Without it: every record."
+        kinds:
+          type: array
+          items: { $ref: "../schemas/user/common.json#/$defs/kind" }
+          uniqueItems: true
+        limit: { type: "integer", minimum: 1, maximum: 5000, default: 500 }
+    ChangesListOutput:
+      type: object
+      required: ["items", "next"]
+      properties:
+        items: { type: "array", items: { $ref: "#/components/schemas/Change" } }
+        next: { type: ["string", "null"], description: "null on the last page." }
+    ListInput:
+      type: object
+      additionalProperties: false
+      properties:
+        from: { $ref: "../schemas/user/common.json#/$defs/partialDate" }
+        to: { $ref: "../schemas/user/common.json#/$defs/partialDate" }
+        person:
+          $ref: "../schemas/user/common.json#/$defs/personRef"
+          description: The owner's id or a Contacts reference. User follows Contacts redirects, so a reference to a merged person finds the records of the person it was merged into.
+        review: { type: "boolean", description: "true: only records for the review list." }
+        includeRejected: { type: "boolean", default: false }
+        limit: { type: "integer", minimum: 1, maximum: 1000, default: 100 }
+        cursor: { type: "string", description: "next of the previous page." }
+    RecordPage:
+      type: object
+      required: ["items", "next"]
+      properties:
+        items: { type: "array", items: { $ref: "#/components/schemas/Record" } }
+        next: { type: ["string", "null"], description: "null on the last page." }
+    GetInput:
+      type: object
+      required: ["id"]
+      additionalProperties: false
+      properties: { id: { $ref: "../schemas/user/common.json#/$defs/recordId" } }
+    RecordEnvelope:
+      type: object
+      required: ["record"]
+      properties: { record: { $ref: "#/components/schemas/Record" } }

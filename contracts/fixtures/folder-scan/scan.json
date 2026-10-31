@@ -1,0 +1,291 @@
+{
+  "description": "scanFolder(listFolder(tree), journal). tree.folderIds works as in listing.json. Derived from the matching rules of Memex.Photos LibraryScan.cs (see contracts/folder-scan.md). Journal entries default to fileId null, volumeId null, availability local, state present, contentHash null, and times 0. New entries get the ids new-1, new-2, ... in the order they are made. hashes gives the content hash of local files by path; a case without hashes runs without a hash function. expected.decisions lists every decision except an unchanged one without updated. nowMs defaults to 1800000000000; file times default to 0.",
+  "cases": [
+    {
+      "name": "rule 1: unchanged; a file id seen for the first time is recorded",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "volumeId": "v1", "folders": { "": [
+        { "name": "a.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f9" },
+        { "name": "b.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f2" }
+      ] } },
+      "journal": [
+        { "id": "e1", "path": "a.jpg", "size": 100, "modifiedMs": 1700000000000 },
+        { "id": "e2", "path": "b.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f2", "volumeId": "v1" }
+      ],
+      "expected": {
+        "decisions": [{ "outcome": "unchanged", "path": "a.jpg", "entryId": "e1", "updated": true }],
+        "counts": { "listed": 2, "unchanged": 2, "new": 0, "missing": 0 },
+        "journal": [["e1", "a.jpg", "present"], ["e2", "b.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 1 on a missing entry: found again",
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 100, "modifiedMs": 1700000000000 }] } },
+      "journal": [{ "id": "e1", "path": "a.jpg", "size": 100, "modifiedMs": 1700000000000, "state": "missing" }],
+      "expected": {
+        "decisions": [{ "outcome": "found-again", "path": "a.jpg", "entryId": "e1" }],
+        "counts": { "foundAgain": 1 },
+        "journal": [["e1", "a.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 5: changed in place",
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 150, "modifiedMs": 1700000000000 }] } },
+      "journal": [{ "id": "e1", "path": "a.jpg", "size": 100, "modifiedMs": 1700000000000, "contentHash": "old" }],
+      "expected": {
+        "decisions": [{ "outcome": "changed", "path": "a.jpg", "entryId": "e1" }],
+        "counts": { "changed": 1 },
+        "journal": [["e1", "a.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 7: new",
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 1, "modifiedMs": 1700000000000 }] } },
+      "journal": [],
+      "expected": {
+        "decisions": [{ "outcome": "new", "path": "a.jpg", "entryId": "new-1" }],
+        "counts": { "new": 1 },
+        "journal": [["new-1", "a.jpg", "present"]]
+      }
+    },
+    {
+      "name": "settle: an entry not seen in a completely listed folder is missing",
+      "tree": { "folders": { "": [{ "name": "a.jpg", "size": 1, "modifiedMs": 1700000000000 }] } },
+      "journal": [
+        { "id": "e1", "path": "a.jpg", "size": 1, "modifiedMs": 1700000000000 },
+        { "id": "e2", "path": "b.jpg", "size": 1, "modifiedMs": 1700000000000 }
+      ],
+      "expected": {
+        "decisions": [{ "outcome": "missing", "path": "b.jpg", "entryId": "e2" }],
+        "counts": { "unchanged": 1, "missing": 1 },
+        "journal": [["e1", "a.jpg", "present"], ["e2", "b.jpg", "missing"]]
+      }
+    },
+    {
+      "name": "rule 2: moved, proven by a strong file id",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "volumeId": "v1", "folders": {
+        "": [{ "name": "a", "type": "folder" }, { "name": "b", "type": "folder" }],
+        "a": [],
+        "b": [{ "name": "x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1" }]
+      } },
+      "journal": [{ "id": "e1", "path": "a/x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1", "volumeId": "v1" }],
+      "expected": {
+        "decisions": [{ "outcome": "moved", "path": "b/x.jpg", "entryId": "e1", "from": "a/x.jpg" }],
+        "counts": { "moved": 1, "missing": 0 },
+        "journal": [["e1", "b/x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 3: moved and changed, proven by a strong file id",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "volumeId": "v1", "folders": {
+        "": [{ "name": "a", "type": "folder" }, { "name": "b", "type": "folder" }],
+        "b": [{ "name": "x.jpg", "size": 120, "modifiedMs": 1700000005000, "fileId": "f1" }]
+      } },
+      "journal": [{ "id": "e1", "path": "a/x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1", "volumeId": "v1" }],
+      "expected": {
+        "decisions": [{ "outcome": "moved-changed", "path": "b/x.jpg", "entryId": "e1", "from": "a/x.jpg" }],
+        "counts": { "moved": 1 },
+        "journal": [["e1", "b/x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 2 with weak ids and no hash: not proven, so new and missing, with a rename candidate (rule 6b)",
+      "tree": { "fileSystem": "ext4", "volumeId": "v1", "folders": {
+        "": [{ "name": "a", "type": "folder" }, { "name": "b", "type": "folder" }],
+        "b": [{ "name": "x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1" }]
+      } },
+      "journal": [{ "id": "e1", "path": "a/x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1", "volumeId": "v1" }],
+      "expected": {
+        "decisions": [
+          { "outcome": "new", "path": "b/x.jpg", "entryId": "new-1" },
+          { "outcome": "missing", "path": "a/x.jpg", "entryId": "e1" }
+        ],
+        "renameCandidates": [{ "newEntryId": "new-1", "missingEntryId": "e1" }],
+        "journal": [["e1", "a/x.jpg", "missing"], ["new-1", "b/x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 2 with weak ids: the content hash proves the move",
+      "tree": { "fileSystem": "ext4", "volumeId": "v1", "folders": {
+        "": [{ "name": "a", "type": "folder" }, { "name": "b", "type": "folder" }],
+        "b": [{ "name": "x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1" }]
+      } },
+      "journal": [{ "id": "e1", "path": "a/x.jpg", "size": 100, "modifiedMs": 1700000000000, "fileId": "f1", "volumeId": "v1", "contentHash": "h1" }],
+      "hashes": { "b/x.jpg": "h1" },
+      "expected": {
+        "decisions": [{ "outcome": "moved", "path": "b/x.jpg", "entryId": "e1", "from": "a/x.jpg" }],
+        "journal": [["e1", "b/x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 6: moved without file ids, proven by the content hash",
+      "tree": { "fileSystem": "fat32", "ignoresCase": true, "folders": {
+        "": [{ "name": "new", "type": "folder" }, { "name": "old", "type": "folder" }],
+        "new": [{ "name": "b.jpg", "size": 100, "modifiedMs": 1700000000000 }],
+        "old": []
+      } },
+      "journal": [{ "id": "e1", "path": "old/a.jpg", "size": 100, "modifiedMs": 1690000000000, "contentHash": "h1" }],
+      "hashes": { "new/b.jpg": "h1" },
+      "expected": {
+        "decisions": [{ "outcome": "moved", "path": "new/b.jpg", "entryId": "e1", "from": "old/a.jpg" }],
+        "journal": [["e1", "new/b.jpg", "present"]]
+      }
+    },
+    {
+      "name": "rule 6: another content is new",
+      "tree": { "fileSystem": "fat32", "ignoresCase": true, "folders": {
+        "": [{ "name": "new", "type": "folder" }, { "name": "old", "type": "folder" }],
+        "new": [{ "name": "b.jpg", "size": 100, "modifiedMs": 1700000000000 }]
+      } },
+      "journal": [{ "id": "e1", "path": "old/a.jpg", "size": 100, "modifiedMs": 1690000000000, "contentHash": "h1" }],
+      "hashes": { "new/b.jpg": "h2" },
+      "expected": {
+        "decisions": [
+          { "outcome": "new", "path": "new/b.jpg", "entryId": "new-1" },
+          { "outcome": "missing", "path": "old/a.jpg", "entryId": "e1" }
+        ],
+        "journal": [["new-1", "new/b.jpg", "present"], ["e1", "old/a.jpg", "missing"]]
+      }
+    },
+    {
+      "name": "rule 4: a file moved onto a path; the entry that held the path is displaced",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "folders": {
+        "": [{ "name": "inbox", "type": "folder" }, { "name": "photos", "type": "folder" }],
+        "inbox": [],
+        "photos": [{ "name": "p.jpg", "size": 200, "modifiedMs": 1700000002000 }]
+      } },
+      "journal": [
+        { "id": "old", "path": "photos/p.jpg", "size": 100, "modifiedMs": 1700000001000, "contentHash": "hOld" },
+        { "id": "in", "path": "inbox/p.jpg", "size": 200, "modifiedMs": 1700000002000, "contentHash": "hIn" }
+      ],
+      "hashes": { "photos/p.jpg": "hIn" },
+      "expected": {
+        "decisions": [{ "outcome": "moved", "path": "photos/p.jpg", "entryId": "in", "from": "inbox/p.jpg", "displaced": "old" }],
+        "counts": { "moved": 1, "missing": 0 },
+        "journal": [["in", "photos/p.jpg", "present"], ["old", "photos/p.jpg", "missing"]]
+      }
+    },
+    {
+      "name": "an online-only file is never hashed: rule 6 does not run for it",
+      "tree": { "fileSystem": "fat32", "ignoresCase": true, "folders": {
+        "": [{ "name": "new", "type": "folder" }, { "name": "old", "type": "folder" }],
+        "new": [{ "name": "b.jpg", "size": 100, "modifiedMs": 1700000000000, "attributes": 4200992 }]
+      } },
+      "journal": [{ "id": "e1", "path": "old/a.jpg", "size": 100, "modifiedMs": 1690000000000, "contentHash": "h1" }],
+      "hashes": {},
+      "expected": {
+        "decisions": [
+          { "outcome": "new", "path": "new/b.jpg", "entryId": "new-1" },
+          { "outcome": "missing", "path": "old/a.jpg", "entryId": "e1" }
+        ],
+        "counts": { "onlineOnly": 1 },
+        "journal": [["new-1", "new/b.jpg", "present"], ["e1", "old/a.jpg", "missing"]]
+      }
+    },
+    {
+      "name": "a folder that could not be listed: its entries are not checked",
+      "tree": { "folders": { "": [{ "name": "locked", "type": "folder" }], "locked": { "error": "unreadable" } } },
+      "journal": [{ "id": "e1", "path": "locked/x.jpg", "size": 1, "modifiedMs": 1700000000000 }],
+      "expected": {
+        "decisions": [],
+        "complete": false,
+        "journal": [["e1", "locked/x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "a folder that is gone below a listed folder: its entries are missing",
+      "tree": { "folders": { "": [{ "name": "old", "type": "folder" }], "old": [] } },
+      "journal": [{ "id": "e1", "path": "old/sub/x.jpg", "size": 1, "modifiedMs": 1700000000000 }],
+      "expected": {
+        "decisions": [{ "outcome": "missing", "path": "old/sub/x.jpg", "entryId": "e1" }],
+        "journal": [["e1", "old/sub/x.jpg", "missing"]]
+      }
+    },
+    {
+      "name": "hidden folders and hidden files that the listing left out are not checked",
+      "tree": { "folders": { "": [{ "name": ".cache", "type": "folder" }, { "name": ".x.jpg", "size": 5 }] } },
+      "journal": [
+        { "id": "e1", "path": ".cache/x.jpg", "size": 1, "modifiedMs": 1700000000000 },
+        { "id": "e2", "path": ".x.jpg", "size": 5, "modifiedMs": 1700000000000 }
+      ],
+      "expected": {
+        "decisions": [],
+        "journal": [["e1", ".cache/x.jpg", "present"], ["e2", ".x.jpg", "present"]]
+      }
+    },
+    {
+      "name": "stable files: a file written or copied in the last 10 seconds is settling and not journaled yet",
+      "nowMs": 1800000000000,
+      "tree": { "folders": { "": [
+        { "name": "copy.jpg", "size": 10, "modifiedMs": 1700000000000, "createdMs": 1799999998000 },
+        { "name": "new.jpg", "size": 10, "modifiedMs": 1799999999000 },
+        { "name": "old.jpg", "size": 10, "modifiedMs": 1700000000000, "createdMs": 1700000000000 }
+      ] } },
+      "journal": [],
+      "expected": {
+        "decisions": [
+          { "outcome": "new", "path": "copy.jpg", "entryId": "new-1", "settling": true },
+          { "outcome": "new", "path": "new.jpg", "entryId": "new-2", "settling": true },
+          { "outcome": "new", "path": "old.jpg", "entryId": "new-3" }
+        ],
+        "counts": { "new": 3, "settling": 2 },
+        "journal": [["new-3", "old.jpg", "present"]]
+      }
+    },
+    {
+      "name": "FAT32 and exFAT: times within 2 seconds, or one hour apart, are equal",
+      "tree": { "fileSystem": "fat32", "ignoresCase": true, "folders": { "": [
+        { "name": "a.jpg", "size": 1, "modifiedMs": 1700000002000 },
+        { "name": "b.jpg", "size": 1, "modifiedMs": 1700003601000 },
+        { "name": "c.jpg", "size": 1, "modifiedMs": 1700000003000 }
+      ] } },
+      "journal": [
+        { "id": "e1", "path": "a.jpg", "size": 1, "modifiedMs": 1700000000000 },
+        { "id": "e2", "path": "b.jpg", "size": 1, "modifiedMs": 1700000000000 },
+        { "id": "e3", "path": "c.jpg", "size": 1, "modifiedMs": 1700000000000 }
+      ],
+      "expected": {
+        "decisions": [{ "outcome": "changed", "path": "c.jpg", "entryId": "e3" }],
+        "counts": { "unchanged": 2, "changed": 1 }
+      }
+    },
+    {
+      "name": "a case-only rename on a file system that ignores case is unchanged, with the new name recorded",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "volumeId": "v1", "folders": { "": [
+        { "name": "img.jpg", "size": 1, "modifiedMs": 1700000000000, "fileId": "f1" }
+      ] } },
+      "journal": [{ "id": "e1", "path": "IMG.JPG", "size": 1, "modifiedMs": 1700000000000, "fileId": "f1", "volumeId": "v1" }],
+      "expected": {
+        "decisions": [{ "outcome": "unchanged", "path": "img.jpg", "entryId": "e1", "updated": true }],
+        "journal": [["e1", "img.jpg", "present"]]
+      }
+    },
+    {
+      "name": "a file that went online-only is unchanged, with the availability recorded",
+      "tree": { "fileSystem": "ntfs", "ignoresCase": true, "folders": { "": [
+        { "name": "a.jpg", "size": 1, "modifiedMs": 1700000000000, "attributes": 4200992 }
+      ] } },
+      "journal": [{ "id": "e1", "path": "a.jpg", "size": 1, "modifiedMs": 1700000000000 }],
+      "expected": {
+        "decisions": [{ "outcome": "unchanged", "path": "a.jpg", "entryId": "e1", "updated": true }],
+        "counts": { "onlineOnly": 1 }
+      }
+    },
+    {
+      "name": "a folder skipped as a loop: its entries are not checked",
+      "tree": { "folderIds": { "a": "folder:same", "b": "folder:same" }, "folders": {
+        "": [{ "name": "a", "type": "folder" }, { "name": "b", "type": "folder" }],
+        "a": [{ "name": "x.jpg", "size": 100, "modifiedMs": 1700000000000 }],
+        "b": [{ "name": "x.jpg", "size": 100, "modifiedMs": 1700000000000 }]
+      } },
+      "journal": [
+        { "id": "e1", "path": "a/x.jpg", "size": 100, "modifiedMs": 1700000000000 },
+        { "id": "e2", "path": "b/x.jpg", "size": 100, "modifiedMs": 1700000000000 }
+      ],
+      "expected": {
+        "decisions": [],
+        "counts": { "listed": 1, "unchanged": 1, "missing": 0 },
+        "journal": [["e1", "a/x.jpg", "present"], ["e2", "b/x.jpg", "present"]]
+      }
+    }
+  ]
+}

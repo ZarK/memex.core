@@ -1,0 +1,12 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "locationsFilePath() cases: where locations.json lives on each OS.",
+  "cases": [
+    { "name": "windows", "platform": "win32", "home": "C:\\Users\\ada", "env": { "LOCALAPPDATA": "D:\\Local" }, "expected": "D:\\Local\\Memex\\locations.json" },
+    { "name": "windows without LOCALAPPDATA", "platform": "win32", "home": "C:\\Users\\ada", "env": {}, "expected": "C:\\Users\\ada\\AppData\\Local\\Memex\\locations.json" },
+    { "name": "macos", "platform": "darwin", "home": "/Users/ada", "env": {}, "expected": "/Users/ada/Library/Application Support/Memex/locations.json" },
+    { "name": "linux", "platform": "linux", "home": "/home/ada", "env": {}, "expected": "/home/ada/.config/memex/locations.json" },
+    { "name": "linux with XDG_CONFIG_HOME", "platform": "linux", "home": "/home/ada", "env": { "XDG_CONFIG_HOME": "/cfg" }, "expected": "/cfg/memex/locations.json" },
+    { "name": "linux ignores a relative XDG_CONFIG_HOME", "platform": "linux", "home": "/home/ada", "env": { "XDG_CONFIG_HOME": "cfg" }, "expected": "/home/ada/.config/memex/locations.json" }
+  ]
+}

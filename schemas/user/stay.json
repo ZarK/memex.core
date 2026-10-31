@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/stay.json",
+  "title": "Stay fields",
+  "description": "Time at one place, from arrival to departure.",
+  "type": "object",
+  "required": ["arrival", "departure", "location"],
+  "properties": {
+    "arrival": { "$ref": "common.json#/$defs/utcTime" },
+    "departure": { "$ref": "common.json#/$defs/utcTime" },
+    "location": { "$ref": "common.json#/$defs/location" },
+    "name": { "$ref": "common.json#/$defs/text" },
+    "place": { "$ref": "common.json#/$defs/placeLikeId" },
+    "timeZone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "IANA time zone name."
+    }
+  },
+  "additionalProperties": false
+}

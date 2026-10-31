@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/home.json",
+  "title": "Home fields",
+  "description": "Where a person lives or lived, and who lived there with them. A card address gives seen, and no from or to.",
+  "type": "object",
+  "anyOf": [{ "required": ["address"] }, { "required": ["town"] }, { "required": ["location"] }],
+  "properties": {
+    "type": { "enum": ["home", "cabin"] },
+    "label": { "$ref": "../user/common.json#/$defs/text" },
+    "location": { "$ref": "../user/common.json#/$defs/location" },
+    "address": { "$ref": "../user/common.json#/$defs/text" },
+    "town": { "$ref": "../user/common.json#/$defs/text" },
+    "country": { "$ref": "../user/common.json#/$defs/country" },
+    "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "to": { "$ref": "../user/common.json#/$defs/partialDate" },
+    "residents": {
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/resident" },
+      "description": "Other persons who lived there with the person."
+    }
+  },
+  "additionalProperties": false
+}

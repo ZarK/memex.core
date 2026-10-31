@@ -1,0 +1,23 @@
+{
+  "scope": "contacts.homes",
+  "claims": [
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:adr:0",
+      "kind": "home",
+      "subject": { "card": "card_f8bd9d9b97259addc818793929b06c90" },
+      "confidence": 0.9,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" },
+      "fields": {
+        "label": "home",
+        "address": "Eksempelveien 1",
+        "town": "Trondheim",
+        "country": "NO"
+      },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# gitleaks settings for memex.core: the default rules, plus one allow rule for
+# the record keys and fact ids in the contracts and fixtures. gitleaks reads
+# them as generic API keys: a kind prefix, then a name or a hash.
+title = "memex.core"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Record keys and fact ids: a kind prefix, then a name or a hash"
+regexTarget = "secret"
+regexes = ['''^(trip|stay|home|workplace|person|place|chapter|milestone|circle|relation|date|identity|fact)_[a-z0-9_]+$''']

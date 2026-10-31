@@ -1,0 +1,20 @@
+{
+  "id": "jb_8f02c1",
+  "type": "job",
+  "app": "photos",
+  "function": "photos.food-reading",
+  "lane": "background",
+  "model": {
+    "id": "gemma-4-31b-it",
+    "fingerprint": "2312eb7ea24780f31f7c96d14132ff7b8972ecfbcdc23aaae174a651ffab6e85"
+  },
+  "batchKey": "import-2026-11-16",
+  "state": "waiting",
+  "wait": {
+    "reason": "model-swap",
+    "detail": "Waiting for 12 jobs on another model to finish before the model changes.",
+    "since": "2026-11-16T21:04:11Z",
+    "ahead": 12
+  },
+  "since": "2026-11-16T21:04:00Z"
+}

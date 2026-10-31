@@ -1,0 +1,34 @@
+{
+  "app": "photos",
+  "version": "1.0.0",
+  "minNodeVersion": "1.0.0",
+  "functions": [
+    {
+      "name": "food-reading",
+      "capabilities": ["food.recognize"],
+      "lane": "background",
+      "runsIn": "node",
+      "required": false,
+      "packs": ["siglip2-base-patch16-224", "gemma-4-31b-it", "caloriek"]
+    },
+    {
+      "name": "image-tools",
+      "capabilities": ["image.upscale", "image.denoise", "image.colorize"],
+      "lane": "interactive",
+      "runsIn": "node",
+      "required": false,
+      "packs": ["real-esrgan-x4plus", "scunet-color-real-psnr", "ddcolor"]
+    },
+    {
+      "name": "library-analysis",
+      "capabilities": ["library.analyze"],
+      "lane": "background",
+      "runsIn": "app",
+      "required": true,
+      "packs": [
+        "siglip2-base-patch16-224", "yunet-2023mar", "auraface-glintr100", "pp-ocrv6-small-det",
+        "pp-ocrv6-medium-rec"
+      ]
+    }
+  ]
+}

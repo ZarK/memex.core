@@ -1,0 +1,50 @@
+{
+  "job": {
+    "id": "jb_8f02c3",
+    "app": "photos",
+    "function": "photos.food-reading",
+    "lane": "background",
+    "model": {
+      "id": "siglip2-base-patch16-224",
+      "sha256": "f260c163588ce8f8dfea3dd34a196a12b38fbbec3be98f1f1f45af7958fdc9fd"
+    },
+    "batchKey": "import-2026-11-16",
+    "state": "succeeded",
+    "wait": null,
+    "progress": { "done": 1, "total": 1, "unit": "meals" },
+    "createdAt": "2026-11-16T21:04:00Z",
+    "startedAt": "2026-11-16T21:09:00Z",
+    "finishedAt": "2026-11-16T21:09:07Z",
+    "result": {
+      "food": false,
+      "foodScore": 0.08,
+      "reading": "skipped",
+      "items": [],
+      "nutrients": null
+    },
+    "outputs": [],
+    "record": {
+      "node": { "id": "nd_a41f09c2", "version": "1.0.0" },
+      "app": "photos",
+      "function": "photos.food-reading",
+      "capability": "food.recognize",
+      "route": "auto",
+      "engine": "onnx",
+      "backend": null,
+      "models": [
+        {
+          "id": "siglip2-base-patch16-224",
+          "version": "2025-02-20",
+          "sha256": "f260c163588ce8f8dfea3dd34a196a12b38fbbec3be98f1f1f45af7958fdc9fd"
+        }
+      ],
+      "device": "gpu:0",
+      "lane": "background",
+      "batchKey": "import-2026-11-16",
+      "queuedMs": 300000,
+      "runMs": 40,
+      "finishedAt": "2026-11-16T21:09:07Z"
+    },
+    "error": null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/packs/store.json",
+  "title": "Pack store index (memex.packs/1)",
+  "description": "<packs>/packs.json: the active version of each installed pack. See contracts/packs.md.",
+  "type": "object",
+  "required": ["format", "packs"],
+  "properties": {
+    "format": { "const": "memex.packs/1" },
+    "packs": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["version", "digest", "folder", "activatedAt"],
+        "properties": {
+          "version": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$" },
+          "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "folder": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}/[0-9A-Za-z][0-9A-Za-z._+-]{0,63}-[0-9a-f]{8}$" },
+          "activatedAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

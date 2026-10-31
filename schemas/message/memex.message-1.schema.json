@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/message/memex.message-1.schema.json",
+  "title": "memex.message/1",
+  "description": "One message from iMessage, SMS, MMS, WhatsApp, mail, or a chat log. See contracts/message.md.",
+  "type": "object",
+  "required": ["format", "id", "service", "conversation", "sender", "sentAt", "source", "converter"],
+  "properties": {
+    "format": { "const": "memex.message/1" },
+    "id": { "$ref": "#/$defs/id" },
+    "service": { "$ref": "#/$defs/service" },
+    "conversation": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["one-to-one", "group", "mail-thread"] },
+        "title": { "type": "string", "maxLength": 500 }
+      },
+      "additionalProperties": false
+    },
+    "sender": { "$ref": "#/$defs/handle" },
+    "fromMe": { "type": "boolean" },
+    "recipients": { "type": "array", "items": { "$ref": "#/$defs/handle" } },
+    "cc": { "type": "array", "items": { "$ref": "#/$defs/handle" } },
+    "bcc": { "type": "array", "items": { "$ref": "#/$defs/handle" } },
+    "sentAt": { "$ref": "#/$defs/time" },
+    "receivedAt": { "$ref": "#/$defs/time" },
+    "timeQuality": { "$ref": "#/$defs/timeQuality" },
+    "subject": { "type": "string" },
+    "text": { "type": "string" },
+    "attachments": { "type": "array", "items": { "$ref": "#/$defs/attachment" } },
+    "replyTo": { "$ref": "#/$defs/id" },
+    "edits": {
+      "type": "array",
+      "description": "Earlier versions of the text, oldest first.",
+      "items": {
+        "type": "object",
+        "required": ["text", "replacedAt"],
+        "properties": {
+          "text": { "type": "string" },
+          "replacedAt": { "$ref": "#/$defs/time" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "deleted": { "$ref": "#/$defs/deleted" },
+    "source": { "$ref": "#/$defs/source" },
+    "converter": { "$ref": "#/$defs/converter" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "service": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,31}$",
+      "description": "Known values: imessage, sms, mms, whatsapp, telegram, signal, messenger, facebook-chat, gtalk, hangouts, msn, skype, irc, x-dm, mail; for calls also phone and facetime."
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an offset."
+    },
+    "timeQuality": { "enum": ["exact", "zone-guessed", "repaired"] },
+    "handle": {
+      "type": "object",
+      "required": ["kind", "raw", "status"],
+      "properties": {
+        "kind": { "enum": ["phone", "email", "platform"] },
+        "raw": { "type": "string" },
+        "status": { "enum": ["normalized", "raw", "unparsed"] },
+        "value": { "type": "string", "minLength": 1 },
+        "phone": { "$ref": "#/$defs/e164" }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "unparsed" } } }, "then": { "not": { "anyOf": [{ "required": ["value"] }, { "required": ["phone"] }] } }, "else": { "required": ["value"] } },
+        { "if": { "properties": { "kind": { "const": "phone" }, "status": { "const": "normalized" } } }, "then": { "properties": { "value": { "$ref": "#/$defs/e164" } } } },
+        { "if": { "properties": { "kind": { "const": "platform" } } }, "then": { "properties": { "status": { "enum": ["raw", "unparsed"] } } }, "else": { "properties": { "status": { "enum": ["normalized", "unparsed"] } } } }
+      ]
+    },
+    "e164": { "type": "string", "pattern": "^\\+[1-9]\\d{1,14}$" },
+    "attachment": {
+      "type": "object",
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "ext": { "type": "string", "pattern": "^[a-z0-9]{1,16}$" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "description": "Media type, for example image/jpeg." },
+        "size": { "type": "integer", "minimum": 0 },
+        "missing": { "const": true }
+      },
+      "additionalProperties": false,
+      "anyOf": [{ "required": ["sha256"] }, { "required": ["missing"] }]
+    },
+    "deleted": {
+      "type": "object",
+      "required": ["reason"],
+      "properties": {
+        "reason": { "enum": ["unsent", "missing"] },
+        "at": { "$ref": "#/$defs/time" }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "record"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^([a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}|imports/\\d{4}-\\d{2}-\\d{2}-[a-z0-9][a-z0-9._-]{0,63})$",
+          "description": "The source folder in the archive, relative to the root."
+        },
+        "run": { "type": "string", "pattern": "^\\d{8}T\\d{6}Z-[0-9a-f]{8}$" },
+        "entry": { "type": "string", "minLength": 1, "description": "The pack entry or database that holds the record." },
+        "record": { "type": "string", "minLength": 1, "description": "The source's own id for the record, or its position." }
+      },
+      "additionalProperties": false
+    },
+    "converter": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "scope": "photos.trips",
+  "facts": [
+    {
+      "key": "trip_lisbon_2025",
+      "kind": "trip",
+      "confidence": 0.92,
+      "method": "rule:trip-nearness/2",
+      "fields": {
+        "title": "Lisbon",
+        "firstDay": "2025-05-02",
+        "lastDay": "2025-05-06",
+        "countries": ["PT"]
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip_lisbon_2025" }]
+    },
+    {
+      "key": "trip_lisbon_2025_part2",
+      "kind": "trip",
+      "confidence": 0.64,
+      "method": "rule:trip-nearness/2",
+      "fields": {
+        "title": "Sintra",
+        "firstDay": "2025-05-07",
+        "lastDay": "2025-05-08",
+        "countries": ["PT"]
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip_lisbon_2025_part2" }]
+    },
+    {
+      "key": "trip_lisbon_2025_feb",
+      "kind": "trip",
+      "confidence": 0.41,
+      "method": "rule:trip-nearness/2",
+      "fields": {
+        "title": "Lisbon",
+        "firstDay": "2025-02-14",
+        "lastDay": "2025-02-16",
+        "countries": ["PT"]
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip_lisbon_2025_feb" }]
+    },
+    {
+      "key": "trip_bergen_2024",
+      "kind": "trip",
+      "confidence": 0.77,
+      "method": "rule:trip-nearness/2",
+      "fields": {
+        "title": "Bergen",
+        "firstDay": "2024-09-20",
+        "lastDay": "2024-09-22",
+        "countries": ["NO"]
+      },
+      "sources": [{ "app": "photos", "kind": "trip", "id": "trip_bergen_2024" }]
+    }
+  ]
+}

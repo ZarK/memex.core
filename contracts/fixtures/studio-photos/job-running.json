@@ -1,0 +1,13 @@
+{
+  "job": {
+    "id": "sj_5d1f0a2b",
+    "tool": "edit",
+    "state": "running",
+    "progress": { "percent": 40, "step": "Generating", "previewUrl": "/api/v1/files/f_77a0c2" },
+    "createdAt": "2026-11-18T10:00:00Z",
+    "finishedAt": null,
+    "outputs": [],
+    "recipe": null,
+    "error": null
+  }
+}

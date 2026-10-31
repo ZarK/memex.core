@@ -1,0 +1,22 @@
+{
+  "scope": "health.stays",
+  "partition": "2025",
+  "claims": [
+    {
+      "key": "workout:2025-05-04T07:05:00Z",
+      "kind": "stay",
+      "confidence": 0.85,
+      "method": "rule:workout-stay/1",
+      "generation": 7,
+      "seen": { "first": "2025-05-04T07:05:00Z", "last": "2025-05-04T07:52:00Z" },
+      "fields": {
+        "arrival": "2025-05-04T07:05:00Z",
+        "departure": "2025-05-04T07:52:00Z",
+        "location": { "lat": 38.6979, "lon": -9.2063, "radiusM": 1500 },
+        "name": "Morning run, Belém",
+        "timeZone": "Europe/Lisbon"
+      },
+      "sources": [{ "app": "health", "kind": "workout", "id": "wo_20250504_0705" }]
+    }
+  ]
+}

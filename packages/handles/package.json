@@ -1,0 +1,47 @@
+{
+  "name": "@tjalve/memex-handles",
+  "version": "0.1.0",
+  "description": "Memex handles: phone numbers to E.164, lowercase email addresses, and platform handles as written",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/handles"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/handles#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11"
+  },
+  "dependencies": {
+    "libphonenumber-js": "1.13.15"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

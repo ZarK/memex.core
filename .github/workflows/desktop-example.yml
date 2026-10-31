@@ -1,0 +1,39 @@
+name: Desktop release dry run
+
+# The desktop release workflow on Memex Hello, the example app of the desktop shell: installers for Windows, macOS
+# and Linux, a smoke test of each one and the checked SHA256SUMS.txt. It runs on branch pushes only (never on a tag),
+# so it is always a dry run: no attestations, no release, and no self-hosted runner.
+
+on:
+  push:
+    # Path filters do not apply to tag pushes; without this, every tag would start the run as a release.
+    branches: ["**"]
+    paths:
+      - "packages/desktop/**"
+      - "packages/licenses/**"
+      - ".github/workflows/desktop-release.yml"
+      - ".github/workflows/desktop-example.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: desktop-example-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hello:
+    uses: ./.github/workflows/desktop-release.yml
+    # The attestation job of the workflow asks for these; it runs only for a release tag push, which never starts this run.
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    with:
+      app-directory: packages/desktop/examples/hello
+      artifact-base: Memex.Hello
+      build: pnpm build
+      smoke-expect: "Hello, Memex!"
+      prepare: |
+        node "$MEMEX_CORE/packages/licenses/dist/bin.js" check --repo "$GITHUB_WORKSPACE" --importer packages/desktop/examples/hello --electron-dist node_modules/electron/dist
+        node "$MEMEX_CORE/packages/licenses/dist/bin.js" notices --out build/notices --repo "$GITHUB_WORKSPACE" --importer packages/desktop/examples/hello --electron-dist node_modules/electron/dist --product "Memex Hello"

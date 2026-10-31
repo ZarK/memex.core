@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/change.json",
+  "title": "Change",
+  "description": "One entry of the change feed (contacts.changes.list). See contracts/contacts-records.md.",
+  "type": "object",
+  "required": ["cursor", "op", "id", "kind", "version", "at"],
+  "properties": {
+    "cursor": { "type": "string", "minLength": 1 },
+    "op": { "enum": ["upsert", "remove"] },
+    "id": { "$ref": "common.json#/$defs/recordId" },
+    "kind": { "$ref": "common.json#/$defs/kind" },
+    "person": {
+      "$ref": "common.json#/$defs/personId",
+      "description": "The person that the record is about; for a person record, its own id. A reader filters by it."
+    },
+    "version": { "type": "integer", "minimum": 1 },
+    "at": { "$ref": "../user/common.json#/$defs/utcTime" },
+    "record": { "$ref": "record.json" },
+    "mergedInto": {
+      "$ref": "common.json#/$defs/recordId",
+      "description": "remove: the record that this one was merged into."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "op": { "const": "upsert" } } },
+      "then": { "required": ["record", "person"], "not": { "required": ["mergedInto"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "remove" } } },
+      "then": { "not": { "required": ["record"] } }
+    }
+  ],
+  "additionalProperties": false
+}

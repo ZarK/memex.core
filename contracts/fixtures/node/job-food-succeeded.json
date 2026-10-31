@@ -1,0 +1,68 @@
+{
+  "job": {
+    "id": "jb_8f02c1",
+    "app": "photos",
+    "function": "photos.food-reading",
+    "lane": "background",
+    "model": {
+      "id": "gemma-4-31b-it",
+      "fingerprint": "2312eb7ea24780f31f7c96d14132ff7b8972ecfbcdc23aaae174a651ffab6e85"
+    },
+    "batchKey": "import-2026-11-16",
+    "state": "succeeded",
+    "wait": null,
+    "progress": { "done": 1, "total": 1, "unit": "meals" },
+    "createdAt": "2026-11-16T21:04:00Z",
+    "startedAt": "2026-11-16T21:09:00Z",
+    "finishedAt": "2026-11-16T21:09:07Z",
+    "result": {
+      "food": true,
+      "foodScore": 0.98,
+      "blend": "2026-10-30-provisional",
+      "reading": "done",
+      "items": [
+        { "name": "Pasta with tomato sauce", "grams": { "value": 320, "low": 250, "high": 400 } },
+        { "name": "Green salad", "grams": { "value": 80, "low": 50, "high": 120 } }
+      ],
+      "nutrients": {
+        "kcal": { "value": 610, "low": 480, "high": 760 },
+        "protein": { "value": 19, "low": 14, "high": 25 },
+        "fat": { "value": 18, "low": 11, "high": 27 },
+        "carbs": { "value": 92, "low": 74, "high": 112 }
+      }
+    },
+    "outputs": [],
+    "record": {
+      "node": { "id": "nd_a41f09c2", "version": "1.0.0" },
+      "app": "photos",
+      "function": "photos.food-reading",
+      "capability": "food.recognize",
+      "route": "url",
+      "engine": "backend",
+      "backend": { "id": "bk_3c9e", "type": "openai", "url": "http://192.0.2.20:8000/v1" },
+      "models": [
+        {
+          "id": "siglip2-base-patch16-224",
+          "version": "2025-02-20",
+          "sha256": "f260c163588ce8f8dfea3dd34a196a12b38fbbec3be98f1f1f45af7958fdc9fd"
+        },
+        {
+          "id": "gemma-4-31b-it",
+          "fingerprint": "2312eb7ea24780f31f7c96d14132ff7b8972ecfbcdc23aaae174a651ffab6e85"
+        },
+        {
+          "id": "caloriek",
+          "version": "1.0.0-memex.1",
+          "sha256": "2a5f7c67146af75c2b8ef05c58621f612348b64646c0244d6de441c4f19c454c"
+        }
+      ],
+      "device": null,
+      "lane": "background",
+      "batchKey": "import-2026-11-16",
+      "queuedMs": 300000,
+      "runMs": 7100,
+      "finishedAt": "2026-11-16T21:09:07Z"
+    },
+    "error": null
+  }
+}

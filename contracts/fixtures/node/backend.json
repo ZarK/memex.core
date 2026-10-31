@@ -1,0 +1,12 @@
+{
+  "id": "bk_3c9e",
+  "type": "openai",
+  "url": "http://192.0.2.20:8000/v1",
+  "label": "GPU server",
+  "local": true,
+  "state": "available",
+  "models": [{ "id": "gemma-4-31b-it", "capabilities": ["chat", "vision"] }],
+  "concurrency": 4,
+  "hasKey": false,
+  "lastProbeAt": "2026-11-16T20:55:00Z"
+}

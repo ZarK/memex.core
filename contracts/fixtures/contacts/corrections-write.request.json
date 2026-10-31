@@ -1,0 +1,66 @@
+{
+  "corrections": [
+    {
+      "id": "cor_805009e60c7da2f25ca3075551db0631",
+      "op": "create",
+      "kind": "home",
+      "person": "person_bb472edb86809a761936d90c70aeb434",
+      "fields": {
+        "type": "home",
+        "label": "Jon's home",
+        "location": { "lat": 63.4712, "lon": 10.3318, "radiusM": 80 },
+        "from": "2011",
+        "residents": [{ "person": "person_55579b557896d0ce1764c47fed644f9b", "from": "2016" }]
+      },
+      "sources": [{ "app": "photos", "kind": "home", "id": "home_88" }],
+      "app": "photos",
+      "createdAt": "2026-11-21T10:00:00Z"
+    },
+    {
+      "id": "cor_2d5333f47f96d5358b9a948ed6e6b73a",
+      "op": "merge",
+      "records": [
+        "person_bb472edb86809a761936d90c70aeb434", "person_1a82856897e2b43e6a9500d987493ca5"
+      ],
+      "app": "contacts",
+      "createdAt": "2026-11-21T11:00:00Z"
+    },
+    {
+      "id": "cor_f4f1e650aacae0c8efe9943d35259ee8",
+      "op": "pin",
+      "records": [
+        "person_55579b557896d0ce1764c47fed644f9b", "person_9194944df25777c5bf080bcbd639b75b"
+      ],
+      "app": "contacts",
+      "createdAt": "2026-11-21T11:02:00Z"
+    },
+    {
+      "id": "cor_f089ad786d55f5221054371cac33392c",
+      "op": "set",
+      "record": "date_d64996479f5523b9b17e1b3d56dc8568",
+      "fields": { "date": "1984-03-12" },
+      "app": "photos",
+      "createdAt": "2026-11-21T12:30:00Z"
+    },
+    {
+      "id": "cor_64e7cb7890125bee239f8c89847fc3c0",
+      "op": "set",
+      "record": "home_85c002863d4491ddb47f5b325a52f641",
+      "fields": {
+        "residents": {
+          "add": [{ "person": "person_55579b557896d0ce1764c47fed644f9b", "from": "2016" }],
+          "remove": [{ "person": "person_1a82856897e2b43e6a9500d987493ca5" }]
+        }
+      },
+      "app": "photos",
+      "createdAt": "2026-11-21T12:40:00Z"
+    },
+    {
+      "id": "cor_0fc5aba61f966e6322e6b153379eb383",
+      "op": "merge",
+      "records": ["home_b49bdb6ef2147f6ba82c726cff7438e8", "home_85c002863d4491ddb47f5b325a52f641"],
+      "app": "contacts",
+      "createdAt": "2026-11-21T12:50:00Z"
+    }
+  ]
+}

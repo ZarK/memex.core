@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/claim.json",
+  "title": "Claim",
+  "description": "A fact as one app infers it, with when its evidence was seen, the method, and the producer's generation. See contracts/user-records.md and contracts/facts.md.",
+  "type": "object",
+  "required": ["key", "kind", "confidence", "method", "generation", "fields", "sources"],
+  "properties": {
+    "key": { "$ref": "common.json#/$defs/claimKey" },
+    "kind": { "$ref": "common.json#/$defs/kind" },
+    "confidence": { "$ref": "common.json#/$defs/confidence" },
+    "method": { "$ref": "../facts/facts.json#/$defs/method" },
+    "generation": { "$ref": "../facts/facts.json#/$defs/generation" },
+    "seen": { "$ref": "../facts/facts.json#/$defs/seen" },
+    "fields": { "type": "object" },
+    "sources": { "type": "array", "maxItems": 100, "items": { "$ref": "common.json#/$defs/ref" } }
+  },
+  "additionalProperties": false,
+  "allOf": [{ "$ref": "common.json#/$defs/kindFields" }]
+}

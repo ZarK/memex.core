@@ -1,0 +1,29 @@
+{
+  "job": {
+    "id": "jb_8f02c1",
+    "app": "photos",
+    "function": "photos.food-reading",
+    "lane": "background",
+    "model": {
+      "id": "gemma-4-31b-it",
+      "fingerprint": "2312eb7ea24780f31f7c96d14132ff7b8972ecfbcdc23aaae174a651ffab6e85"
+    },
+    "batchKey": "import-2026-11-16",
+    "state": "waiting",
+    "wait": {
+      "reason": "backend-down",
+      "detail": "The food reading server does not respond. Node tries again at 21:09.",
+      "since": "2026-11-16T21:04:00Z",
+      "ahead": 0,
+      "retryAt": "2026-11-16T21:09:00Z"
+    },
+    "progress": null,
+    "createdAt": "2026-11-16T21:04:00Z",
+    "startedAt": null,
+    "finishedAt": null,
+    "result": null,
+    "outputs": [],
+    "record": null,
+    "error": null
+  }
+}

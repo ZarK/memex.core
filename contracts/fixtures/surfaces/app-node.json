@@ -1,0 +1,13 @@
+{
+  "format": "memex.app/1",
+  "app": "node",
+  "name": "Memex Node",
+  "kind": "service",
+  "version": "1.0.0",
+  "executable": "/Users/alex/Library/Application Support/Memex/Node/1.0.0/memex-node",
+  "running": {
+    "pid": 811,
+    "startedAt": "2026-11-10T08:00:02Z",
+    "socket": "/Users/alex/Library/Application Support/Memex/Node/node.sock"
+  }
+}

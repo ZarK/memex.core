@@ -1,0 +1,9 @@
+{
+  "changeId": "chg_89a270a247a014a96b1a80c993abc45f",
+  "summary": "1 trip added, 1 trip updated, 1 claim withdrawn.",
+  "counts": { "created": 1, "updated": 1, "unchanged": 0, "withdrawn": 1, "removed": 1 },
+  "records": [
+    { "key": "trip-1842", "id": "trip_be3b7aabcbc567ddfdcace1a9d735bf4" },
+    { "key": "trip-1907", "id": "trip_9cabab35b4b615729dfde9c5214f82bc" }
+  ]
+}

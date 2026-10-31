@@ -1,0 +1,6 @@
+{
+  "default": { "kind": "auto" },
+  "functions": {
+    "photos.food-reading": { "kind": "url", "backend": "bk_3c9e", "model": "gemma-4-31b-it" }
+  }
+}

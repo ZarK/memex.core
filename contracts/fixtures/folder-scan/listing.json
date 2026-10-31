@@ -1,0 +1,812 @@
+{
+  "description": "listFolder() over a fixture tree. Root /fixture (POSIX paths) unless the case sets platform win32. tree.folderIds gives a folder's id by path (default folder:<path>); two folders with one id are one folder seen twice. An entry has name and optional type (file, folder, link, other; default file), size, modifiedMs, createdMs, attributes, reparseTag, flags, fileId, invalidName. expected.files lists [path, onlineOnly, sizeKnown] in walk order.",
+  "cases": [
+    {
+      "name": "hidden and system names are left out",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "a.jpg",
+              "size": 10
+            },
+            {
+              "name": ".hidden.jpg",
+              "size": 10
+            },
+            {
+              "name": "Thumbs.db",
+              "size": 10,
+              "attributes": 6
+            },
+            {
+              "name": ".git",
+              "type": "folder"
+            },
+            {
+              "name": "$RECYCLE.BIN",
+              "type": "folder"
+            },
+            {
+              "name": "System Volume Information",
+              "type": "folder"
+            },
+            {
+              "name": ".Trash-1000",
+              "type": "folder"
+            },
+            {
+              "name": "photos",
+              "type": "folder"
+            }
+          ],
+          "photos": [
+            {
+              "name": "b.jpg",
+              "size": 20
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "a.jpg",
+            false,
+            true
+          ],
+          [
+            "photos/b.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          "photos"
+        ],
+        "skippedFolders": [
+          "$RECYCLE.BIN",
+          ".Trash-1000",
+          ".git",
+          "System Volume Information"
+        ],
+        "skippedFiles": [
+          ".hidden.jpg",
+          "Thumbs.db"
+        ],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "includeHidden lists hidden names but never system folders",
+      "options": {
+        "includeHidden": true
+      },
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": ".hidden.jpg",
+              "size": 10
+            },
+            {
+              "name": ".git",
+              "type": "folder"
+            },
+            {
+              "name": "$RECYCLE.BIN",
+              "type": "folder"
+            }
+          ],
+          ".git": [
+            {
+              "name": "HEAD",
+              "size": 1
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            ".hidden.jpg",
+            false,
+            true
+          ],
+          [
+            ".git/HEAD",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          ".git"
+        ],
+        "skippedFolders": [
+          "$RECYCLE.BIN"
+        ],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "links are never followed",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "a.jpg",
+              "size": 1
+            },
+            {
+              "name": "to-folder",
+              "type": "link"
+            },
+            {
+              "name": "to-file.jpg",
+              "type": "link"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "a.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [
+          "to-file.jpg",
+          "to-folder"
+        ],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "Windows: recall and offline attributes are online-only; a downloaded cloud file is local",
+      "tree": {
+        "platform": "win32",
+        "fileSystem": "ntfs",
+        "ignoresCase": true,
+        "folders": {
+          "": [
+            {
+              "name": "online.jpg",
+              "size": 100,
+              "attributes": 4200992,
+              "reparseTag": 2415943706
+            },
+            {
+              "name": "downloaded.jpg",
+              "size": 100,
+              "attributes": 1056,
+              "reparseTag": 2415943706
+            },
+            {
+              "name": "recall-on-open.jpg",
+              "size": 100,
+              "attributes": 262176
+            },
+            {
+              "name": "offline.jpg",
+              "size": 100,
+              "attributes": 4128
+            },
+            {
+              "name": "pinned.jpg",
+              "size": 100,
+              "attributes": 525344,
+              "reparseTag": 2415943706
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "downloaded.jpg",
+            false,
+            true
+          ],
+          [
+            "offline.jpg",
+            true,
+            true
+          ],
+          [
+            "online.jpg",
+            true,
+            true
+          ],
+          [
+            "pinned.jpg",
+            false,
+            true
+          ],
+          [
+            "recall-on-open.jpg",
+            true,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "macOS: dataless files and iCloud stubs are online-only",
+      "tree": {
+        "platform": "darwin",
+        "fileSystem": "apfs",
+        "ignoresCase": true,
+        "folders": {
+          "": [
+            {
+              "name": "local.heic",
+              "size": 100
+            },
+            {
+              "name": "dataless.heic",
+              "size": 2000000,
+              "flags": 1073741824
+            },
+            {
+              "name": "hidden-flag.heic",
+              "size": 5,
+              "flags": 32768
+            },
+            {
+              "name": ".IMG_1.HEIC.icloud",
+              "size": 180
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "IMG_1.HEIC",
+            true,
+            false
+          ],
+          [
+            "dataless.heic",
+            true,
+            true
+          ],
+          [
+            "hidden-flag.heic",
+            false,
+            true
+          ],
+          [
+            "local.heic",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "a .icloud name outside macOS is an ordinary hidden file",
+      "tree": {
+        "platform": "linux",
+        "folders": {
+          "": [
+            {
+              "name": ".IMG_1.HEIC.icloud",
+              "size": 180
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [
+          ".IMG_1.HEIC.icloud"
+        ],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "names that collide by case or after normalization: the first in ordinal order is listed",
+      "tree": {
+        "fileSystem": "ntfs",
+        "ignoresCase": true,
+        "folders": {
+          "": [
+            {
+              "name": "a.jpg",
+              "size": 1
+            },
+            {
+              "name": "A.jpg",
+              "size": 2
+            },
+            {
+              "name": "café.jpg",
+              "size": 3
+            },
+            {
+              "name": "café.jpg",
+              "size": 4
+            },
+            {
+              "name": "Ålesund",
+              "type": "folder"
+            },
+            {
+              "name": "Ålesund",
+              "type": "folder"
+            }
+          ],
+          "Ålesund": [
+            {
+              "name": "x.jpg",
+              "size": 5
+            }
+          ],
+          "Ålesund": [
+            {
+              "name": "y.jpg",
+              "size": 6
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "A.jpg",
+            false,
+            true
+          ],
+          [
+            "café.jpg",
+            false,
+            true
+          ],
+          [
+            "Ålesund/x.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          "Ålesund"
+        ],
+        "skippedFolders": [
+          "Ålesund"
+        ],
+        "skippedFiles": [
+          "a.jpg",
+          "café.jpg"
+        ],
+        "links": [],
+        "warnings": [
+          [
+            "names-collide-by-case",
+            "a.jpg"
+          ],
+          [
+            "names-collide-after-normalization",
+            "café.jpg"
+          ],
+          [
+            "names-collide-after-normalization",
+            "Ålesund"
+          ]
+        ],
+        "complete": true
+      }
+    },
+    {
+      "name": "case-sensitive file system: names that differ in case are two files",
+      "tree": {
+        "fileSystem": "ext4",
+        "ignoresCase": false,
+        "folders": {
+          "": [
+            {
+              "name": "a.jpg",
+              "size": 1
+            },
+            {
+              "name": "A.jpg",
+              "size": 2
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "A.jpg",
+            false,
+            true
+          ],
+          [
+            "a.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "a folder that cannot be listed makes the listing incomplete",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "locked",
+              "type": "folder"
+            },
+            {
+              "name": "open",
+              "type": "folder"
+            }
+          ],
+          "locked": {
+            "error": "unreadable"
+          },
+          "open": [
+            {
+              "name": "a.jpg",
+              "size": 1
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "open/a.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          "open"
+        ],
+        "unlistedFolders": [
+          [
+            "locked",
+            false
+          ]
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [
+          [
+            "folder-not-listed",
+            "locked"
+          ]
+        ],
+        "complete": false
+      }
+    },
+    {
+      "name": "a name that is not valid Unicode is left out with a warning",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "ok.jpg",
+              "size": 1
+            },
+            {
+              "name": "bad�.jpg",
+              "size": 1,
+              "invalidName": true
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "ok.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [
+          [
+            "name-not-unicode",
+            ""
+          ]
+        ],
+        "complete": true
+      }
+    },
+    {
+      "name": "walk order: breadth first, folders and files in ordinal name order",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "b",
+              "type": "folder"
+            },
+            {
+              "name": "a",
+              "type": "folder"
+            },
+            {
+              "name": "z.jpg",
+              "size": 1
+            },
+            {
+              "name": "B.jpg",
+              "size": 1
+            }
+          ],
+          "a": [
+            {
+              "name": "deep",
+              "type": "folder"
+            },
+            {
+              "name": "1.jpg",
+              "size": 1
+            }
+          ],
+          "a/deep": [
+            {
+              "name": "2.jpg",
+              "size": 1
+            }
+          ],
+          "b": [
+            {
+              "name": "3.jpg",
+              "size": 1
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "B.jpg",
+            false,
+            true
+          ],
+          [
+            "z.jpg",
+            false,
+            true
+          ],
+          [
+            "a/1.jpg",
+            false,
+            true
+          ],
+          [
+            "b/3.jpg",
+            false,
+            true
+          ],
+          [
+            "a/deep/2.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          "a",
+          "b",
+          "a/deep"
+        ],
+        "skippedFolders": [],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    },
+    {
+      "name": "a folder seen twice (a bind mount) is listed once; the second view is skipped as a loop and is not listed",
+      "tree": {
+        "folderIds": {
+          "a": "folder:same",
+          "b": "folder:same"
+        },
+        "folders": {
+          "": [
+            {
+              "name": "a",
+              "type": "folder"
+            },
+            {
+              "name": "b",
+              "type": "folder"
+            }
+          ],
+          "a": [
+            {
+              "name": "x.jpg",
+              "size": 10
+            },
+            {
+              "name": "sub",
+              "type": "folder"
+            }
+          ],
+          "a/sub": [
+            {
+              "name": "y.jpg",
+              "size": 10
+            }
+          ],
+          "b": [
+            {
+              "name": "x.jpg",
+              "size": 10
+            },
+            {
+              "name": "sub",
+              "type": "folder"
+            }
+          ],
+          "b/sub": [
+            {
+              "name": "y.jpg",
+              "size": 10
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "a/x.jpg",
+            false,
+            true
+          ],
+          [
+            "a/sub/y.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          "",
+          "a",
+          "a/sub"
+        ],
+        "skippedFolders": [
+          "b"
+        ],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [
+          [
+            "folder-loop",
+            "b"
+          ]
+        ],
+        "complete": true
+      }
+    },
+    {
+      "name": "folders that a storage device keeps in a share are not entered",
+      "tree": {
+        "folders": {
+          "": [
+            {
+              "name": "a.jpg",
+              "size": 10
+            },
+            {
+              "name": "@eaDir",
+              "type": "folder"
+            },
+            {
+              "name": "#recycle",
+              "type": "folder"
+            },
+            {
+              "name": "#snapshot",
+              "type": "folder"
+            },
+            {
+              "name": "@Recycle",
+              "type": "folder"
+            },
+            {
+              "name": "@Recently-Snapshot",
+              "type": "folder"
+            },
+            {
+              "name": ".@__thumb",
+              "type": "folder"
+            },
+            {
+              "name": ".@__qini",
+              "type": "folder"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "files": [
+          [
+            "a.jpg",
+            false,
+            true
+          ]
+        ],
+        "listedFolders": [
+          ""
+        ],
+        "skippedFolders": [
+          "#recycle",
+          "#snapshot",
+          ".@__qini",
+          ".@__thumb",
+          "@Recently-Snapshot",
+          "@Recycle",
+          "@eaDir"
+        ],
+        "skippedFiles": [],
+        "links": [],
+        "warnings": [],
+        "complete": true
+      }
+    }
+  ]
+}

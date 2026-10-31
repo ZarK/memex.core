@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/change.json",
+  "title": "Change",
+  "description": "One entry of the change feed (user.changes.list). See contracts/user-records.md.",
+  "type": "object",
+  "required": ["cursor", "op", "id", "kind", "version", "at"],
+  "properties": {
+    "cursor": { "type": "string", "minLength": 1 },
+    "op": { "enum": ["upsert", "remove"] },
+    "id": { "$ref": "common.json#/$defs/recordId" },
+    "kind": { "$ref": "common.json#/$defs/kind" },
+    "version": { "type": "integer", "minimum": 1 },
+    "at": { "$ref": "common.json#/$defs/utcTime" },
+    "record": { "$ref": "record.json" },
+    "mergedInto": { "$ref": "common.json#/$defs/recordId" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "op": { "const": "upsert" } } },
+      "then": { "required": ["record"], "not": { "required": ["mergedInto"] } }
+    },
+    {
+      "if": { "properties": { "op": { "const": "remove" } } },
+      "then": { "not": { "required": ["record"] } }
+    }
+  ],
+  "additionalProperties": false
+}

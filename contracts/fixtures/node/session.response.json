@@ -1,0 +1,8 @@
+{
+  "id": "ss_19ab",
+  "function": "workspace.live-voice",
+  "pipeline": "node",
+  "backend": null,
+  "expiresAt": "2026-11-20T18:01:00Z",
+  "url": "/v1/realtime?session=ss_19ab"
+}

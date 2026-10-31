@@ -1,0 +1,37 @@
+{
+  "changeId": null,
+  "summary": "Nothing new stored. The create repeats a create that was stored before.",
+  "corrections": [
+    {
+      "id": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946",
+      "op": "create",
+      "kind": "home",
+      "record": "home_4ea140588150773ce3aace786aeef7f4",
+      "fields": {
+        "type": "home",
+        "label": "Bergen flat",
+        "location": { "lat": 60.3913, "lon": 5.3221, "radiusM": 60 },
+        "town": "Bergen",
+        "country": "NO",
+        "from": "2019-08",
+        "members": [{ "person": "person_4c1029697ee358715d3a14a2add817c4", "from": "2019-08" }]
+      },
+      "sources": [
+        { "app": "photos", "kind": "home", "id": "home_9d27c1e0b4a35f68e2c17d0a4b6f8e13" }
+      ],
+      "app": "photos",
+      "createdAt": "2026-11-20T17:42:10Z"
+    }
+  ],
+  "results": [
+    {
+      "id": "cor_019a7c3e5d2b4f68a1c0e9d7b5a3f2c4",
+      "status": "applied",
+      "repeat": true,
+      "repeatOf": "cor_5b0e8d7c2a9f4e61b3d07c58a1e2f946",
+      "record": "home_4ea140588150773ce3aace786aeef7f4",
+      "version": 2,
+      "state": "active"
+    }
+  ]
+}

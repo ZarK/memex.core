@@ -1,0 +1,8 @@
+[
+  { "kind": "trip", "scope": "photos.trips", "key": "trip_lisbon_2025", "id": "trip_0451f6f8dcec05dfbabdd9f2b737f179" },
+  { "kind": "trip", "scope": "photos.trips", "key": "trip_lisbon_2025_part2", "id": "trip_ebbd52757c1cb259e9e74db1b2848436" },
+  { "kind": "trip", "scope": "photos.trips", "key": "trip_lisbon_2025_feb", "id": "trip_bcd7c8ea8f297e446adc53dcaca993dc" },
+  { "kind": "trip", "scope": "photos.trips", "key": "trip_bergen_2024", "id": "trip_c9d59c159678dba73e20e208125c4913" },
+  { "kind": "stay", "scope": "photos.stays", "key": "2025:Lisbon:0214", "id": "stay_7d94d850142a985885a07bff40315bba" },
+  { "kind": "finance.category", "scope": "finance.categories", "key": "txn:7f3a9c", "id": "finance.category_ed69036a7a482fbfb73072d13f8909e9" }
+]

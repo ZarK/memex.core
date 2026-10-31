@@ -1,0 +1,10 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "status.json": "schemas/studio/photos.json#/$defs/status",
+    "submit.request.json": "schemas/studio/photos.json#/$defs/submit",
+    "job-running.json": "schemas/studio/photos.json#/$defs/jobEnvelope",
+    "job-succeeded.json": "schemas/studio/photos.json#/$defs/jobEnvelope",
+    "job-withheld.json": "schemas/studio/photos.json#/$defs/jobEnvelope"
+  }
+}

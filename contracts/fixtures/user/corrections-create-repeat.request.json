@@ -1,0 +1,23 @@
+{
+  "corrections": [
+    {
+      "id": "cor_019a7c3e5d2b4f68a1c0e9d7b5a3f2c4",
+      "op": "create",
+      "kind": "home",
+      "fields": {
+        "type": "home",
+        "label": "Bergen flat",
+        "location": { "lat": 60.3913, "lon": 5.3221, "radiusM": 60 },
+        "town": "Bergen",
+        "country": "NO",
+        "from": "2019-08",
+        "members": [{ "person": "person_4c1029697ee358715d3a14a2add817c4", "from": "2019-08" }]
+      },
+      "sources": [
+        { "app": "photos", "kind": "home", "id": "home_9d27c1e0b4a35f68e2c17d0a4b6f8e13" }
+      ],
+      "app": "photos",
+      "createdAt": "2026-12-02T10:05:12Z"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "workplace_2c8a5f1e9b3d4a7c6e0f2b4d8a1c3e5f",
+  "kind": "workplace",
+  "version": 2,
+  "state": "active",
+  "origin": "user",
+  "confidence": 1,
+  "review": false,
+  "fields": {
+    "name": "Example School",
+    "type": "school",
+    "sites": [
+      {
+        "location": { "lat": 60.3889, "lon": 5.3302, "radiusM": 120 },
+        "label": "Main building",
+        "type": "office"
+      }
+    ],
+    "stints": [{ "from": "2019-08", "to": "2023-06" }]
+  },
+  "provenance": {
+    "name": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }],
+    "type": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }],
+    "sites": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }],
+    "stints": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }],
+    "sites/0": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }],
+    "stints/0": [{ "correction": "cor_6a2f0e1d9c8b4a7e5d3c2b1a0f9e8d7c" }]
+  },
+  "alternatives": {},
+  "corrected": ["name", "type", "sites", "stints"],
+  "claims": [],
+  "sources": [{ "app": "photos", "kind": "workplace", "id": "workplace_31" }],
+  "createdAt": "2026-11-20T17:40:00Z",
+  "updatedAt": "2026-11-21T08:12:00Z"
+}

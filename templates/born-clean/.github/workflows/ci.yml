@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# No token permissions by default. Each job asks only for what it reads.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Only pull request runs are cancelled: every push to main must finish, so each push range is checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    # Pin the full commit SHA of memex.core; the tools come from the same commit.
+    uses: ZarK/memex.core/.github/workflows/reusable-ci.yml@<40-character commit SHA of memex.core>
+    permissions:
+      contents: read
+    with:
+      license: AGPL-3.0-or-later
+      stack: pnpm
+      build: pnpm build
+      typecheck: pnpm typecheck
+      test: pnpm test

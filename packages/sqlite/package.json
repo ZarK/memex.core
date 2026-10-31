@@ -1,0 +1,56 @@
+{
+  "name": "@tjalve/memex-sqlite",
+  "version": "0.1.0",
+  "description": "Memex SQLite: openDatabase with WAL, a busy timeout and foreign keys, migrations per scope, the change journal, and checkpoints when idle and on exit",
+  "license": "MIT",
+  "author": "Tjalve Aarflot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZarK/memex.core.git",
+    "directory": "packages/sqlite"
+  },
+  "homepage": "https://github.com/ZarK/memex.core/tree/main/packages/sqlite#readme",
+  "bugs": {
+    "url": "https://github.com/ZarK/memex.core/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node-sqlite": {
+      "types": "./dist/node-sqlite.d.ts",
+      "import": "./dist/node-sqlite.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "13.0.2"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "5.9.2",
+    "vitest": "4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

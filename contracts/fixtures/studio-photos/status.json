@@ -1,0 +1,16 @@
+{
+  "ready": true,
+  "version": "1.0.0",
+  "tools": [
+    { "tool": "edit", "ready": true },
+    { "tool": "expand", "ready": true },
+    { "tool": "relight", "ready": true },
+    { "tool": "face-restore", "ready": true },
+    {
+      "tool": "animate",
+      "ready": false,
+      "reason": "models_missing",
+      "missing": ["Example video model"]
+    }
+  ]
+}

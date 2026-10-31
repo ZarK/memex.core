@@ -1,0 +1,23 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "register.request.json": "openapi/node.v1.yaml#/components/schemas/Registration",
+    "register.response.json": "openapi/node.v1.yaml#/components/schemas/RegistrationResult",
+    "routes.json": "openapi/node.v1.yaml#/components/schemas/Routes",
+    "run-embed-text.request.json": "openapi/node.v1.yaml#/components/schemas/RunRequest",
+    "run-embed-text.response.json": "openapi/node.v1.yaml#/components/schemas/RunResult",
+    "job-food-waiting.json": "openapi/node.v1.yaml#/components/schemas/JobEnvelope",
+    "job-food-succeeded.json": "openapi/node.v1.yaml#/components/schemas/JobEnvelope",
+    "job-food-off.json": "openapi/node.v1.yaml#/components/schemas/JobEnvelope",
+    "job-food-not-food.json": "openapi/node.v1.yaml#/components/schemas/JobEnvelope",
+    "job-food.request.json": "openapi/node.v1.yaml#/components/schemas/JobRequest",
+    "lease.request.json": "openapi/node.v1.yaml#/components/schemas/LeaseRequest",
+    "lease-granted.json": "openapi/node.v1.yaml#/components/schemas/LeaseEnvelope",
+    "lease-yielding.json": "openapi/node.v1.yaml#/components/schemas/LeaseEnvelope",
+    "queue-item.json": "openapi/node.v1.yaml#/components/schemas/QueueItem",
+    "backend.json": "openapi/node.v1.yaml#/components/schemas/Backend",
+    "session.request.json": "openapi/node.v1.yaml#/components/schemas/SessionRequest",
+    "session.response.json": "openapi/node.v1.yaml#/components/schemas/Session",
+    "drain.response.json": "openapi/node.v1.yaml#/components/schemas/Drain"
+  }
+}

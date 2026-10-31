@@ -1,0 +1,62 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "locationWarningText() cases: the warning for one folder, its location, and its size (bytes, complete, stoppedBy). Sizes use units of 1000. A local folder has no warning (null).",
+  "cases": [
+    {
+      "name": "data folder in OneDrive with a complete size",
+      "key": "data", "path": "C:\\Users\\ada\\OneDrive\\Memex\\Photos",
+      "location": { "path": "C:\\Users\\ada\\OneDrive\\Memex\\Photos", "kind": "sync", "provider": "OneDrive", "root": "C:\\Users\\ada\\OneDrive", "evidence": "variable" },
+      "size": { "bytes": 3240000000, "files": 1200, "complete": true, "stoppedBy": null, "skipped": 0 },
+      "expected": "The data folder C:\\Users\\ada\\OneDrive\\Memex\\Photos is in C:\\Users\\ada\\OneDrive, which OneDrive synchronizes. OneDrive will upload about 3.2 GB now, and every change after that. OneDrive can copy a database while the app writes to it, and that copy can be damaged. To be safe, move the folder out of C:\\Users\\ada\\OneDrive, or stop OneDrive from synchronizing it. Memex keeps working."
+    },
+    {
+      "name": "cache folder in Dropbox, counted to the limit",
+      "key": "cache", "path": "/Users/ada/Dropbox/cache",
+      "location": { "path": "/Users/ada/Dropbox/cache", "kind": "sync", "provider": "Dropbox", "root": "/Users/ada/Dropbox", "evidence": "segment" },
+      "size": { "bytes": 100000000000, "files": 50000, "complete": false, "stoppedBy": "limit", "skipped": 0 },
+      "expected": "The cache folder /Users/ada/Dropbox/cache is in /Users/ada/Dropbox, which Dropbox synchronizes. Dropbox will upload more than 100 GB now, and every change after that. The app can make or download these files again, so synchronizing them uses space and bandwidth for nothing. Memex keeps working."
+    },
+    {
+      "name": "log folder in Syncthing, counted until the time ran out",
+      "key": "logs", "path": "/home/ada/Sync/logs",
+      "location": { "path": "/home/ada/Sync/logs", "kind": "sync", "provider": "Syncthing", "root": "/home/ada/Sync", "evidence": "marker" },
+      "size": { "bytes": 45600000, "files": 30, "complete": false, "stoppedBy": "time", "skipped": 0 },
+      "expected": "The log folder /home/ada/Sync/logs is in /home/ada/Sync, which Syncthing synchronizes. Syncthing will upload at least 46 MB now, and every change after that. The files in it belong to this computer only, so other devices do not need them. Memex keeps working."
+    },
+    {
+      "name": "empty data folder in iCloud Drive",
+      "key": "data", "path": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study",
+      "location": { "path": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study", "kind": "sync", "provider": "iCloud Drive", "root": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs", "evidence": "segment" },
+      "size": { "bytes": 0, "files": 0, "complete": true, "stoppedBy": null, "skipped": 0 },
+      "expected": "The data folder /Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study is in /Users/ada/Library/Mobile Documents/com~apple~CloudDocs, which iCloud Drive synchronizes. iCloud Drive uploads every change in it. iCloud Drive can copy a database while the app writes to it, and that copy can be damaged. To be safe, move the folder out of /Users/ada/Library/Mobile Documents/com~apple~CloudDocs, or stop iCloud Drive from synchronizing it. Memex keeps working."
+    },
+    {
+      "name": "data folder on a network share",
+      "key": "data", "path": "\\\\nas\\home\\Memex\\Photos",
+      "location": { "path": "\\\\nas\\home\\Memex\\Photos", "kind": "network", "provider": null, "root": "\\\\nas\\home", "evidence": "unc" },
+      "size": null,
+      "expected": "The data folder \\\\nas\\home\\Memex\\Photos is on a network share (\\\\nas\\home). A database on a network share can be damaged when two computers write to it, and the app stops when the share is not available. A folder on this computer is safer. Memex keeps working."
+    },
+    {
+      "name": "data folder on an external drive",
+      "key": "data", "path": "/Volumes/Backup/Memex/Photos",
+      "location": { "path": "/Volumes/Backup/Memex/Photos", "kind": "removable", "provider": null, "root": "/Volumes/Backup", "evidence": "mount-path" },
+      "size": null,
+      "expected": "The data folder /Volumes/Backup/Memex/Photos is on a removable or external drive (/Volumes/Backup). When the drive is not connected, the app stops and tells you; it does not make an empty folder in its place. Memex keeps working."
+    },
+    {
+      "name": "cache folder redirected into an MSIX package",
+      "key": "cache", "path": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache",
+      "location": { "path": "C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache", "kind": "virtualized", "provider": "MSIX", "root": "C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Local", "evidence": "msix-redirect" },
+      "size": null,
+      "expected": "The cache folder C:\\Users\\ada\\AppData\\Local\\Memex\\Study\\Cache is in a folder that Windows keeps for this app package only (C:\\Users\\ada\\AppData\\Local\\Packages\\Memex.Study_8wekyb3d8bbwe\\LocalCache\\Local). Other apps and your backup tool may not find it there, and Windows deletes it when you uninstall the app. Memex keeps working."
+    },
+    {
+      "name": "local folder has no warning",
+      "key": "data", "path": "/home/ada/Memex/User",
+      "location": { "path": "/home/ada/Memex/User", "kind": "local", "provider": null, "root": null, "evidence": "none" },
+      "size": null,
+      "expected": null
+    }
+  ]
+}

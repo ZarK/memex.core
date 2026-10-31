@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/contacts/workplace.json",
+  "title": "Workplace fields",
+  "description": "Where a person works or studied: its sites, and the person's stints there.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": { "$ref": "../user/common.json#/$defs/text" },
+    "type": { "enum": ["employer", "client", "own", "school"] },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["location"],
+        "properties": {
+          "location": { "$ref": "../user/common.json#/$defs/location" },
+          "label": { "$ref": "../user/common.json#/$defs/text" },
+          "type": { "enum": ["office", "cabin", "other"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "from": { "$ref": "../user/common.json#/$defs/partialDate" },
+          "to": { "$ref": "../user/common.json#/$defs/partialDate" },
+          "title": { "$ref": "../user/common.json#/$defs/text" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

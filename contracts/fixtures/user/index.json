@@ -1,0 +1,32 @@
+{
+  "description": "Each fixture file and the schema it follows. Paths are relative to the repository root.",
+  "fixtures": {
+    "claims-write.request.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "claims-write.response.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteOutput",
+    "trip.record.json": "schemas/user/record.json",
+    "trips-get.response.json": "openapi/user.v1.yaml#/components/schemas/RecordEnvelope",
+    "trips-list.request.json": "openapi/user.v1.yaml#/components/schemas/ListInput",
+    "trips-list.response.json": "openapi/user.v1.yaml#/components/schemas/RecordPage",
+    "person.record.json": "schemas/user/record.json",
+    "home.record.json": "schemas/user/record.json",
+    "workplace.record.json": "schemas/user/record.json",
+    "stays-claims-write.request.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "corrections-write.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-write.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "corrections-repeat.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-repeat.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "corrections-create-repeat.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-create-repeat.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "corrections-out-of-order-1.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-out-of-order-1.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "corrections-out-of-order-2.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-out-of-order-2.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput",
+    "changes-list.request.json": "openapi/user.v1.yaml#/components/schemas/ChangesListInput",
+    "changes-list.response.json": "openapi/user.v1.yaml#/components/schemas/ChangesListOutput",
+    "finance-claims-write.request.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "health-claims-write.request.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "contacts-claims-write.request.json": "openapi/user.v1.yaml#/components/schemas/ClaimsWriteInput",
+    "corrections-list-edit.request.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteInput",
+    "corrections-list-edit.response.json": "openapi/user.v1.yaml#/components/schemas/CorrectionsWriteOutput"
+  }
+}

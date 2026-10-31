@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/user/place.json",
+  "title": "Place fields",
+  "description": "A named place that the owner goes back to.",
+  "type": "object",
+  "required": ["name", "type", "location"],
+  "properties": {
+    "name": { "$ref": "common.json#/$defs/text" },
+    "type": {
+      "enum": [
+        "bar", "restaurant", "cafe", "shop", "sport", "culture", "hotel", "area", "spot", "other"
+      ]
+    },
+    "location": { "$ref": "common.json#/$defs/location" },
+    "address": { "$ref": "common.json#/$defs/text" },
+    "town": { "$ref": "common.json#/$defs/text" },
+    "country": { "$ref": "common.json#/$defs/country" }
+  },
+  "additionalProperties": false
+}

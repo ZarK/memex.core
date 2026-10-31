@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZarK/memex.core/schemas/packs/pack.json",
+  "title": "Pack manifest (memex.pack/1)",
+  "description": "One version of one pack. See contracts/packs.md.",
+  "type": "object",
+  "required": ["format", "id", "version", "title", "kind", "engine", "capabilities", "origin", "source", "license", "files"],
+  "properties": {
+    "format": { "const": "memex.pack/1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+    "version": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$" },
+    "title": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["model", "map", "data", "corpus", "tool"] },
+    "engine": { "enum": ["onnx", "generative", "files"] },
+    "capabilities": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$" }, "uniqueItems": true },
+    "origin": { "enum": ["upstream", "memex"] },
+    "derivedFrom": {
+      "type": "object",
+      "required": ["url", "revision", "license", "notice"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "revision": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "notice": { "type": "string", "minLength": 1 },
+        "trainingData": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Each data set that the original model was trained on. Required for a model that Memex made. The model card names the same data sets.",
+          "items": {
+            "type": "object",
+            "required": ["name", "license"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "format": "uri" },
+              "license": { "type": ["string", "null"], "minLength": 1, "description": "SPDX expression or LicenseRef-<name>; null when the data has no stated license." }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "recipe": {
+      "type": "object",
+      "description": "How the device makes the one file of this pack from what the publisher offers now. The store records an ordinary manifest, without a recipe, of what was made.",
+      "required": ["from"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1, "description": "The url; {date} stands for the newest dated build." },
+        "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4, "description": "West, south, east, north: the part of a PMTiles build to keep." },
+        "maxZoom": { "type": "integer", "minimum": 0, "maximum": 20 }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["publisher", "homepage", "revision"],
+      "properties": {
+        "publisher": { "type": "string", "minLength": 1 },
+        "homepage": { "type": "string", "format": "uri" },
+        "revision": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "license": {
+      "type": "object",
+      "required": ["spdx", "url", "commercial", "limits", "attribution", "acceptance"],
+      "properties": {
+        "spdx": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "file": { "type": "string", "minLength": 1 },
+        "commercial": { "enum": ["allowed", "restricted", "unknown"] },
+        "limits": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "attribution": { "type": ["string", "null"] },
+        "acceptance": { "enum": ["required", "none"] }
+      },
+      "if": { "properties": { "acceptance": { "const": "required" } } },
+      "then": { "required": ["file"] },
+      "additionalProperties": false
+    },
+    "hardware": {
+      "type": "object",
+      "properties": {
+        "memoryBytes": { "type": "integer", "minimum": 0 },
+        "gpuMemoryBytes": { "type": "integer", "minimum": 0 },
+        "providers": { "type": "array", "items": { "enum": ["webgpu", "coreml", "cpu"] }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "bytes", "url"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9¹²³]|[Ll][Pp][Tt][0-9¹²³]) *(?:\\.[^/]*)?(?:/|$))[^\\\\/:*?\"<>|\\u0000-\\u001f\\u007f-\\u009f]*[^\\\\/:*?\"<>|\\u0000-\\u001f\\u007f-\\u009f. ](?:/(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][0-9¹²³]|[Ll][Pp][Tt][0-9¹²³]) *(?:\\.[^/]*)?(?:/|$))[^\\\\/:*?\"<>|\\u0000-\\u001f\\u007f-\\u009f]*[^\\\\/:*?\"<>|\\u0000-\\u001f\\u007f-\\u009f. ])*$", "description": "Relative, with / separators. No empty, . or .. segment; no : and no character that a Windows file name cannot hold; no trailing dot or space; no reserved Windows device name. See contracts/packs.md." },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "role": { "type": "string", "minLength": 1 },
+          "parts": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["url", "bytes", "sha256"],
+              "properties": {
+                "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+                "bytes": { "type": "integer", "minimum": 1 },
+                "sha256": { "$ref": "#/$defs/sha256" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Only a file that a recipe makes is without its hash.",
+      "if": { "not": { "required": ["recipe"] } },
+      "then": { "properties": { "files": { "items": { "required": ["sha256"] } } } }
+    },
+    {
+      "if": { "properties": { "origin": { "const": "memex" } }, "required": ["origin"] },
+      "then": { "required": ["derivedFrom"] }
+    },
+    {
+      "description": "A model conversion that Memex makes is published only when its code and weights licenses allow commercial use. Its training data is named and recorded as a limit.",
+      "if": { "properties": { "origin": { "const": "memex" }, "kind": { "const": "model" } }, "required": ["origin", "kind"] },
+      "then": {
+        "properties": {
+          "derivedFrom": { "required": ["trainingData"] },
+          "license": {
+            "properties": {
+              "commercial": { "const": "allowed" },
+              "limits": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

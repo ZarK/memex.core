@@ -1,0 +1,18 @@
+{
+  "corrections": [
+    {
+      "id": "cor_ee94fd822d6b0fe8d2c0a3a5b5bd6b63",
+      "op": "unmerge",
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "app": "contacts",
+      "createdAt": "2026-11-22T08:00:00Z"
+    },
+    {
+      "id": "cor_c8b61b986dda8ce37e926d8456731207",
+      "op": "unmerge",
+      "record": "person_1a82856897e2b43e6a9500d987493ca5",
+      "app": "contacts",
+      "createdAt": "2026-11-22T08:00:05Z"
+    }
+  ]
+}

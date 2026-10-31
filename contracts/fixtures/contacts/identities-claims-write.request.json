@@ -1,0 +1,31 @@
+{
+  "scope": "contacts.identities",
+  "claims": [
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:tel:0",
+      "kind": "identity",
+      "subject": { "card": "card_f8bd9d9b97259addc818793929b06c90" },
+      "confidence": 0.95,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" },
+      "fields": { "type": "phone", "value": "+12015550147", "label": "mobile" },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }
+      ]
+    },
+    {
+      "key": "card_f8bd9d9b97259addc818793929b06c90:email:0",
+      "kind": "identity",
+      "subject": { "card": "card_f8bd9d9b97259addc818793929b06c90" },
+      "confidence": 0.95,
+      "method": "card:vcard/1",
+      "generation": 41,
+      "seen": { "first": "2023-03-01T09:00:00Z", "last": "2026-11-16T10:00:00Z" },
+      "fields": { "type": "email", "value": "family@example.net", "label": "home", "shared": true },
+      "sources": [
+        { "app": "contacts", "kind": "card", "id": "card_f8bd9d9b97259addc818793929b06c90" }
+      ]
+    }
+  ]
+}

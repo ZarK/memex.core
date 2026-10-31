@@ -1,0 +1,52 @@
+{
+  "format": "memex.pack/1",
+  "id": "multilingual-e5-small",
+  "version": "2024-02-08",
+  "title": "Multilingual E5 small (text embeddings)",
+  "kind": "model",
+  "engine": "onnx",
+  "capabilities": ["embed.text"],
+  "origin": "upstream",
+  "source": {
+    "publisher": "intfloat",
+    "homepage": "https://huggingface.co/intfloat/multilingual-e5-small",
+    "revision": "bbefb2844c2f51f8472aa61ca319ae929be9daf0"
+  },
+  "license": {
+    "spdx": "MIT",
+    "url": "https://huggingface.co/intfloat/multilingual-e5-small",
+    "file": "LICENSE",
+    "commercial": "allowed",
+    "limits": [],
+    "attribution": "Multilingual E5 small by intfloat, MIT License",
+    "acceptance": "none"
+  },
+  "hardware": {
+    "memoryBytes": 600000000,
+    "gpuMemoryBytes": 0,
+    "providers": ["webgpu", "coreml", "cpu"]
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 45,
+      "sha256": "90c2dde676311e66d07ff9b0d0586ec838de6b0dcbd53b0875d01239480ac306",
+      "role": "license",
+      "url": "https://huggingface.co/intfloat/multilingual-e5-small/resolve/bbefb2844c2f51f8472aa61ca319ae929be9daf0/LICENSE"
+    },
+    {
+      "path": "onnx/model.onnx",
+      "bytes": 470268512,
+      "sha256": "d7c4b743081e6ccdf263598ab3a94f5df38c9f2aec014973c0806819d7762f26",
+      "role": "model",
+      "url": "https://huggingface.co/intfloat/multilingual-e5-small/resolve/bbefb2844c2f51f8472aa61ca319ae929be9daf0/onnx/model.onnx"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 17082730,
+      "sha256": "224931eb13f8d2471acd38a4a0d7417d20e8ea340160a467ceaa359d25197b87",
+      "role": "tokenizer",
+      "url": "https://huggingface.co/intfloat/multilingual-e5-small/resolve/bbefb2844c2f51f8472aa61ca319ae929be9daf0/tokenizer.json"
+    }
+  ]
+}

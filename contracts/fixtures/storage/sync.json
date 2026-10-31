@@ -1,0 +1,78 @@
+{
+  "format": "memex.storage.fixtures/1",
+  "description": "syncWarnings() cases. One warning per covered folder, in the order data, cache, logs, state, packs, apps. The archive is exempt.",
+  "cases": [
+    {
+      "name": "windows OneDrive from the environment",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "OneDrive": "C:\\Users\\ada\\OneDrive" },
+      "paths": { "data": "C:\\Users\\ada\\OneDrive\\Memex\\Photos", "cache": "C:\\Users\\ada\\AppData\\Local\\Memex\\Photos\\Cache" },
+      "expected": [ { "key": "data", "path": "C:\\Users\\ada\\OneDrive\\Memex\\Photos", "client": "OneDrive" } ]
+    },
+    {
+      "name": "windows OneDrive for Business from the environment, any folder name",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": { "OneDriveCommercial": "C:\\Users\\ada\\Work Files" },
+      "paths": { "data": "c:\\users\\ada\\work files\\Memex\\Finance" },
+      "expected": [ { "key": "data", "path": "c:\\users\\ada\\work files\\Memex\\Finance", "client": "OneDrive" } ]
+    },
+    {
+      "name": "windows OneDrive segment with an organization",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "paths": { "data": "D:\\OneDrive - Contoso\\Memex\\Finance", "logs": "C:\\Users\\ada\\AppData\\Local\\Memex\\Finance\\Logs" },
+      "expected": [ { "key": "data", "path": "D:\\OneDrive - Contoso\\Memex\\Finance", "client": "OneDrive" } ]
+    },
+    {
+      "name": "the archive is exempt",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "paths": { "archive": "C:\\Users\\ada\\Proton Drive\\Memex Archive", "packs": "C:\\Users\\ada\\Proton Drive\\packs" },
+      "expected": [ { "key": "packs", "path": "C:\\Users\\ada\\Proton Drive\\packs", "client": "Proton Drive" } ]
+    },
+    {
+      "name": "macos CloudStorage provider",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "paths": { "data": "/Users/ada/Library/CloudStorage/Dropbox-Personal/Memex/Health", "state": "/Users/ada/Library/CloudStorage/ProtonDrive-ada-folder/state" },
+      "expected": [
+        { "key": "data", "path": "/Users/ada/Library/CloudStorage/Dropbox-Personal/Memex/Health", "client": "Dropbox" },
+        { "key": "state", "path": "/Users/ada/Library/CloudStorage/ProtonDrive-ada-folder/state", "client": "ProtonDrive" }
+      ]
+    },
+    {
+      "name": "macos iCloud Drive",
+      "platform": "darwin", "home": "/Users/ada", "env": {},
+      "paths": { "data": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study", "cache": "/Users/ada/Library/Caches/Memex/Study" },
+      "expected": [ { "key": "data", "path": "/Users/ada/Library/Mobile Documents/com~apple~CloudDocs/Memex/Study", "client": "iCloud Drive" } ]
+    },
+    {
+      "name": "linux segments, compared without case",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "paths": { "data": "/home/ada/Memex/User", "logs": "/home/ada/Dropbox/memex/logs", "apps": "/home/ada/nextcloud/memex/apps" },
+      "expected": [
+        { "key": "logs", "path": "/home/ada/Dropbox/memex/logs", "client": "Dropbox" },
+        { "key": "apps", "path": "/home/ada/nextcloud/memex/apps", "client": "Nextcloud" }
+      ]
+    },
+    {
+      "name": "other known roots",
+      "platform": "win32", "home": "C:\\Users\\ada", "env": {},
+      "paths": {
+        "data": "G:\\My Drive\\Memex\\Contacts",
+        "cache": "C:\\Users\\ada\\Dropbox (Personal)\\cache",
+        "logs": "C:\\Users\\ada\\iCloudDrive\\logs",
+        "state": "P:\\pCloud Drive\\state",
+        "packs": "C:\\Users\\ada\\Google Drive\\packs"
+      },
+      "expected": [
+        { "key": "data", "path": "G:\\My Drive\\Memex\\Contacts", "client": "Google Drive" },
+        { "key": "cache", "path": "C:\\Users\\ada\\Dropbox (Personal)\\cache", "client": "Dropbox" },
+        { "key": "logs", "path": "C:\\Users\\ada\\iCloudDrive\\logs", "client": "iCloud Drive" },
+        { "key": "state", "path": "P:\\pCloud Drive\\state", "client": "pCloud" },
+        { "key": "packs", "path": "C:\\Users\\ada\\Google Drive\\packs", "client": "Google Drive" }
+      ]
+    },
+    {
+      "name": "a name that only contains a root is not covered",
+      "platform": "linux", "home": "/home/ada", "env": {},
+      "paths": { "data": "/home/ada/MyDropboxNotes/Memex/Photos", "cache": "/home/ada/OneDriveBackup/cache" },
+      "expected": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "app": "finance",
+  "function": "finance.merchant-embeddings",
+  "lane": "background",
+  "model": {
+    "id": "multilingual-e5-small",
+    "sha256": "583387b18a62de36e6090ef373fb915a49a12469131d356cc4e45c6f92b2fcf6"
+  },
+  "input": { "texts": ["CORNER BAKERY OSLO", "CITY PARKING 0150"], "type": "passage" },
+  "deadlineMs": 30000
+}
