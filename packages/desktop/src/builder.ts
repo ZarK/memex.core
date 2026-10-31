@@ -41,6 +41,12 @@ export interface BuilderOptions {
    * pack copies this package's note (SERVICES_DMG_NOTE) into the build folder and names the copy here.
    */
   servicesNote?: string;
+  /**
+   * The GitHub repository of the app's releases. The build then writes the update files that the installed app reads
+   * (app-update.yml in the app, and for each release latest.yml or rc.yml, and the blockmaps), and pack checks them.
+   * Without it the build has no update files.
+   */
+  updates?: { owner: string; repo: string };
   /** The folder with icon.ico, icon.icns and the PNG sizes. Defaults to icons. */
   icons?: string;
   /** The output folder. Defaults to release. */
@@ -89,6 +95,8 @@ export function builderConfig(options: BuilderOptions): Record<string, unknown> 
   const base = options.artifactBase ?? options.productName.trim().replace(/\s+/g, ".");
   if (!/^[A-Za-z0-9._-]+$/.test(base)) throw new Error(`The artifact name ${base} must be letters, digits, dots, dashes and underscores.`);
   const icons = options.icons ?? "icons";
+  const github = /^[A-Za-z0-9._-]+$/;
+  if (options.updates && !(github.test(options.updates.owner) && github.test(options.updates.repo))) throw new Error("The updates owner and repository must be letters, digits, dots, dashes and underscores.");
   const extraResources: Array<{ from: string; to: string; filter?: string[] }> = [...(options.extraResources ?? [])];
   if (options.notices) extraResources.push({ from: options.notices, to: "notices", filter: ["**/*"] });
   if (options.services) extraResources.push({ from: options.services, to: "services", filter: ["**/*"] });
@@ -104,7 +112,8 @@ export function builderConfig(options: BuilderOptions): Record<string, unknown> 
     directories: { output: options.output ?? "release", buildResources: icons },
     files: [...options.files, "!**/*.map"],
     extraResources,
-    publish: null,
+    // pack runs electron-builder with --publish never: this only makes it write app-update.yml and the update files.
+    publish: options.updates ? { provider: "github", owner: options.updates.owner, repo: options.updates.repo } : null,
     electronFuses: {
       // Only for an app that ships the CLI shim, which runs the CLI with the program's own Node.js.
       runAsNode: options.runAsNode === true,

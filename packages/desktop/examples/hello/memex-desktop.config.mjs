@@ -22,6 +22,8 @@ export default {
     // The CLI shim (memex-hello call, mcp) runs cli.mjs with this program's own Node.js, which needs the runAsNode
     // fuse. Memex Hello accepts that; an app without a CLI leaves the fuse off.
     runAsNode: true,
+    // The releases of this repository are the update feed: the build writes app-update.yml and the update files.
+    updates: { owner: 'ZarK', repo: 'memex.core' },
   },
   cli: { entry: 'cli.mjs' },
   ...(services ? { services: { pins: `${services}/services.json`, from: services } } : {}),

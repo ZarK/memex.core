@@ -34,6 +34,7 @@ What the shell does:
 | Sandbox | `app.enableSandbox()`, context isolation, no Node.js in pages, no webview. Pages can navigate only within the app's own server; https links open in the browser; other links and new windows are refused. Every permission request is denied unless the app lists it in `permissions`. |
 | Crash screen | When the server exits on its own, or fails before it is ready, or the page process stops: what happened, the exit code, the last 40 lines of output, the log file, and Restart and Quit. |
 | About | Help > About (the app menu on macOS): version, license, Electron, Chromium and Node.js, and every component in `notices.json` (from `memex-licenses notices`), with a button that opens the notices folder. |
+| Updates | With the `updates` option: the app checks its repository's releases, downloads an update and installs it when the app quits (see Updates). |
 | Quit | The shell asks the server to stop (a message to a utility process; standard input closes for a program), waits up to 5 seconds, then ends it. |
 | Log | `<logs>/desktop.log`: each step, and every line the server writes. |
 
@@ -110,7 +111,7 @@ export default {
 
 The base config (`builderConfig()` in `@tjalve/memex-desktop/build`):
 
-- `appId` `to.memex.<app>`, `asar`, no source maps, `publish: null`.
+- `appId` `to.memex.<app>`, `asar`, no source maps. `publish` is `null`, unless the app sets `updates` (see Updates).
 - Windows: NSIS x64, per user (`%LOCALAPPDATA%\Programs\<Product>`, HKCU only, no elevation), the user may choose the folder, and the uninstaller leaves the user's data. The program gets its icon and version resources; nothing is signed until a certificate is chosen.
 - macOS: dmg for arm64, with an ad-hoc signature of the whole bundle until a Developer ID is chosen (`macIdentity`). Setting the fuses changes the Electron Framework binary; on Apple silicon macOS stops a program whose signature no longer matches it (SIGKILL at start), so an unsigned bundle does not run. The ad-hoc signature also gives the bundle its id (`to.memex.<app>`). The hardened runtime is always on, so dyld ignores `DYLD_INSERT_LIBRARIES` and the other `DYLD_*` variables. Its entitlements (`assets/entitlements.mac*.plist`) allow only the JIT that V8 needs; an ad-hoc build also turns library validation off, because an ad-hoc signature has no team id and library validation would refuse the app's own Electron Framework. Linux: AppImage and deb for x64, named `linux-x64`. The deb needs `homepage` and `maintainer` ("Name <email>") in the builder options.
 - Installers are named `<Product.With.Dots>-<version>-<windows|macos|linux>-<arch>.<ext>`.
@@ -140,6 +141,36 @@ The services folder must be outside `~/Memex` (`MEMEX_HOME`) and the pack store;
 Signing: `services.sign` in the pack config names a module whose default export gets the staged copies (`{ services: [{ app, version, folder, command }], target, platform }`) before electron-builder runs, for example to sign the Windows programs with the app's certificate. Without it nothing is signed on Windows and Linux. On macOS electron-builder signs every program in the bundle, the services too, with the app's identity (ad hoc until a Developer ID is chosen) and the hardened runtime.
 
 `memex-desktop services status` shows the installed versions and the clients; `memex-desktop services stage` unpacks the pinned archives as `pack` does.
+
+## Updates
+
+An app updates itself from the releases of its own repository. Two settings turn it on:
+
+```js
+// main.mjs
+startDesktopApp({ /* ... */, updates: { provider: "github", owner: "ZarK", repo: "memex.photos" } });
+```
+
+```js
+// memex-desktop.config.mjs
+export default { builder: { /* ... */, updates: { owner: "ZarK", repo: "memex.photos" } } };
+```
+
+| Part | How |
+|---|---|
+| Check | 30 seconds after the app starts, then every 6 hours. Help > Check for Updates (the app menu on macOS) checks at once. One check runs at a time. |
+| Channels | `latest` follows stable releases. `beta` also follows release candidates (`v1.0.0-rc.2`). A version with a prerelease part starts on `beta`, any other version on `latest`. The person can change it in the menu (Beta Channel). On `beta` the shell looks for a stable release first and then for a release candidate, so rc.1 goes to rc.2, and rc.2 goes to 1.0.0. |
+| Download | In the background, when a check finds a newer version. The installer is checked against the sha512 in the update file. The shell never goes back to an older version. |
+| Install | When the app quits (`autoInstallOnAppQuit`), silently. The menu item "Restart to Update to <version>" does it at once and starts the app again. |
+| Off switch | Menu: Update Automatically. The choice is kept in `<state>/updates.json` (`memex.updates/1`). Off means no checks, no download and no install on quit; a downloaded update waits until updates are on. `MEMEX_DESKTOP_UPDATES=off` turns updates off for one run. |
+| Where it runs | Only an installed app: Windows (NSIS) and Linux (AppImage). A deb is updated with the package manager. An unsigned macOS build cannot install updates; that comes with the Developer ID. An app in smoke-test mode never updates. The log says why updates are not available (`updates:` lines in `desktop.log`). |
+| Failure | A failed check or download is logged and shown as the state `error`. The app runs as before and tries again at the next check. |
+
+The build writes the files that the installed app reads. With `builder.updates` electron-builder writes `app-update.yml` into the app and, for each release, `latest.yml` (`rc.yml` for a release candidate, `latest-linux.yml` and `rc-linux.yml` on Linux) and a blockmap for each installer. `memex-desktop pack` checks that the update file is there, is for the build's version, and lists only files of the release with the sha512 that the files have. It writes the names of the files to publish in `UPDATE-FILES.txt`, and the release workflow puts them on the release beside the installers.
+
+The repository must be public: the installed app reads the release without a token. Until then the check fails with a 404 and the app runs as before. No update is signed yet, so the sha512 in the update file (from the release page, over https) is the only check on an installer until Windows signing and the macOS Developer ID are there.
+
+To try it without a release, run an app against a folder that holds `latest.yml` and the installer: the app's code passes `updates: { provider: "generic", url: "http://127.0.0.1:<port>/" }`. [`examples/hello`](examples/hello) does this with `MEMEX_HELLO_UPDATE_FEED`. The tests of this package run the real electron-updater against a local server that answers as GitHub does.
 
 ## Example
 

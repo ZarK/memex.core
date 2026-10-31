@@ -2,7 +2,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app } from 'electron'
+import { Menu, app } from 'electron'
 import { startDesktopApp } from '@tjalve/memex-desktop'
 import { helloIdentity } from './identity.mjs'
 import { helloPaths } from './paths.mjs'
@@ -31,6 +31,10 @@ if (proof) {
   app.on('browser-window-focus', (_event, win) => note({ type: 'proof-window-focus', title: win.getTitle() }))
 }
 
+// MEMEX_HELLO_UPDATE_FEED=<http url> reads updates from a test server (latest.yml and the installer) instead of the
+// releases of the repository, for trying an update without a release.
+const testFeed = process.env.MEMEX_HELLO_UPDATE_FEED
+
 const shell = startDesktopApp({
   app: identity.app,
   productName: identity.productName,
@@ -45,6 +49,7 @@ const shell = startDesktopApp({
     ...(process.env.MEMEX_HELLO_SERVER === 'exec' ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
   },
   icon: path.join(here, 'icons', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+  updates: testFeed ? { provider: 'generic', url: testFeed } : { provider: 'github', owner: 'ZarK', repo: 'memex.core' },
   license: 'MIT',
   copyright: 'Copyright (c) 2026 Tjalve Aarflot',
   homepage: 'https://github.com/ZarK/memex.core/tree/main/packages/desktop',
@@ -122,10 +127,17 @@ async function probe(win) {
   win.webContents.forcefullyCrashRenderer()
 }
 
+// The labels of the application menu, with the state of its checkboxes: what the person sees under Help.
+function menuLabels() {
+  const walk = (items) => items.flatMap((item) => (item.type === 'separator' ? [] : [{ label: item.label, ...(item.type === 'checkbox' ? { checked: item.checked } : {}), enabled: item.enabled, ...(item.submenu ? { submenu: walk(item.submenu.items) } : {}) }]))
+  return walk(Menu.getApplicationMenu()?.items ?? [])
+}
+
 function record(event) {
   const { window: win, ...rest } = event
   note(rest)
   if (!proof) return
+  if (event.type === 'update-state') note({ type: 'proof-menu', menu: menuLabels() })
   if (event.type === 'page-loaded' && event.url.startsWith('http://127.0.0.1:')) {
     void capture(win, 'window', "!['get','post'].some((id) => document.getElementById(id).textContent === 'waiting')").then(async () => {
       if (process.env.MEMEX_HELLO_PROBE === '1' && !probed) {

@@ -22,6 +22,7 @@ import {
 import { isAllowedAppUrl, isAllowedExternalUrl, type ReadyAnnouncement } from "./ready-line.js";
 import { installServices, servicesAction, uninstallServices, type InstallServicesResult, type UninstallServicesResult } from "./services.js";
 import { DESKTOP_ENV } from "./server.js";
+import { UpdateController, parseUpdateFeed, updateSupport, type UpdateFeed, type UpdateSettings, type UpdateState, type UpdaterLike } from "./updates.js";
 import { SMOKE_EXPECT_ENV, createSmokeRecorder, pageOutcome, smokeFolder, type SmokeOutcome, type SmokeRecorder } from "./smoke.js";
 import { startServer, type RunningServer, type ServerSpec } from "./spawn.js";
 
@@ -51,6 +52,8 @@ export type ShellEvent =
   | { type: "notices-opened"; folder: string; ok: boolean }
   | { type: "services-installed"; result: InstallServicesResult | null }
   | { type: "services-failed"; error: string }
+  | { type: "update-state"; state: UpdateState; settings: UpdateSettings }
+  | { type: "updates-unavailable"; reason: string }
   | { type: "quit-requested"; from: "crash-screen" | "menu" | "api" };
 
 export interface DesktopAppOptions {
@@ -96,6 +99,13 @@ export interface DesktopAppOptions {
    * when packaged and the build carries services. false turns it off; resources names another folder (an unpackaged run).
    */
   services?: false | { resources: string };
+  /**
+   * Where the app's releases are, for example { provider: "github", owner: "ZarK", repo: "memex.photos" }. The shell
+   * checks when the app starts and every 6 hours, downloads an update in the background and installs it when the app
+   * quits. Help > Check for Updates, the "Update Automatically" switch and the Beta Channel are in the menu. Default:
+   * no updates. Updates run only in an installed app: Windows, and Linux as an AppImage.
+   */
+  updates?: false | UpdateFeed;
 }
 
 export interface DesktopShell {
@@ -106,6 +116,8 @@ export interface DesktopShell {
   restart(): Promise<void>;
   showAbout(): BrowserWindow;
   quit(): void;
+  /** The update controller, or null when the app has no updates (not installed, no feed, off for this build). */
+  readonly updates: UpdateController | null;
 }
 
 const PRELOAD = fileURLToPath(new URL("../assets/shell-preload.cjs", import.meta.url));
@@ -248,6 +260,7 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
   let safeStorageChecked = false;
   let relaunchOnRestart = false;
   let firstShow = true;
+  let updates: UpdateController | null = null;
 
   const focus = () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -545,8 +558,66 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
     app.quit();
   }
 
+  function updatesMenu(): MenuItemConstructorOptions[] {
+    const controller = updates;
+    if (!controller) return [];
+    const state = controller.state;
+    const settings = controller.settings;
+    const check: MenuItemConstructorOptions =
+      state.status === "ready"
+        ? { label: `Restart to Update to ${state.version}`, click: () => void controller.installNow() }
+        : {
+            label: state.status === "checking" ? "Checking for Updates..." : state.status === "downloading" ? `Downloading ${state.version}...` : "Check for Updates",
+            enabled: settings.enabled && state.status !== "checking" && state.status !== "downloading",
+            click: () => void controller.checkNow(),
+          };
+    return [
+      { type: "separator" },
+      check,
+      { label: "Update Automatically", type: "checkbox", checked: settings.enabled, click: (item) => controller.setEnabled(item.checked) },
+      { label: "Beta Channel", type: "checkbox", checked: settings.channel === "beta", click: (item) => controller.setChannel(item.checked ? "beta" : "latest") },
+    ];
+  }
+
+  // Updates: a controller on electron-updater, only in an installed app that has a feed. A failure is logged and the
+  // app runs as it did.
+  async function startUpdates(): Promise<void> {
+    if (!options.updates) return;
+    const support = updateSupport({ platform: process.platform, env: process.env, packaged });
+    if (!support.supported) {
+      log(`Updates are not available: ${support.reason}`);
+      emit({ type: "updates-unavailable", reason: support.reason ?? "" });
+      return;
+    }
+    try {
+      const feed = parseUpdateFeed(options.updates);
+      const module = (await import("electron-updater")) as { autoUpdater?: UpdaterLike; default?: { autoUpdater?: UpdaterLike } };
+      const updater = module.autoUpdater ?? module.default?.autoUpdater;
+      if (!updater) throw new Error("electron-updater has no autoUpdater.");
+      updates = new UpdateController({
+        updater,
+        feed,
+        version: app.getVersion(),
+        settingsFile: path.join(paths.state, "updates.json"),
+        log: (line) => log(`updates: ${line}`),
+        onState: (state, settings) => {
+          emit({ type: "update-state", state, settings });
+          buildMenu();
+        },
+      });
+      updates.start();
+      buildMenu();
+      log(`Updates are on the ${updates.settings.channel} channel (${updates.settings.enabled ? "on" : "off"}).`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log(`Updates could not start: ${message}`);
+      emit({ type: "updates-unavailable", reason: message });
+    }
+  }
+
   function buildMenu(): void {
     const about: MenuItemConstructorOptions = { label: `About ${productName}`, click: () => showAbout() };
+    const updateItems = updatesMenu();
     const view: MenuItemConstructorOptions = {
       label: "View",
       submenu: [
@@ -563,12 +634,12 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
     const template: MenuItemConstructorOptions[] =
       process.platform === "darwin"
         ? [
-            { label: productName, submenu: [about, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { label: `Quit ${productName}`, accelerator: "Cmd+Q", click: () => requestQuit("menu") }] },
+            { label: productName, submenu: [about, ...updateItems, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { label: `Quit ${productName}`, accelerator: "Cmd+Q", click: () => requestQuit("menu") }] },
             { role: "editMenu" },
             view,
             { role: "windowMenu" },
           ]
-        : [{ label: "File", submenu: [{ label: "Quit", accelerator: "Ctrl+Q", click: () => requestQuit("menu") }] }, { role: "editMenu" }, view, { label: "Help", submenu: [about] }];
+        : [{ label: "File", submenu: [{ label: "Quit", accelerator: "Ctrl+Q", click: () => requestQuit("menu") }] }, { role: "editMenu" }, view, { label: "Help", submenu: [about, ...updateItems] }];
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   }
 
@@ -628,6 +699,7 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
     await mainWindow.loadURL(STARTING_URL);
     await ensureServices();
     await launch();
+    await startUpdates();
   }
 
   app.whenReady().then(ready).catch((error: unknown) => {
@@ -648,6 +720,9 @@ export function startDesktopApp(options: DesktopAppOptions): DesktopShell | null
     restart,
     showAbout,
     quit: () => requestQuit("api"),
+    get updates() {
+      return updates;
+    },
   };
 }
 
