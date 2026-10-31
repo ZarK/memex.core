@@ -21,6 +21,7 @@ The reference implementation is `@tjalve/memex-storage` (`packages/storage`). Th
 | `archive` | `~\Memex\Archive` | `~/Memex/Archive` | `~/Memex/Archive` |
 
 - `~` is the user's home folder.
+- When `MEMEX_LOCAL_ROOT` is set (since 1.2), `cache`, `logs` and `state` are `MEMEX_LOCAL_ROOT/<App>/Cache`, `/Logs` and `/State` on every OS ([Precedence](#precedence)).
 - On Windows, when `LOCALAPPDATA` is unset or not absolute, it is `~\AppData\Local`.
 - On Linux, `XDG_CACHE_HOME`, `XDG_STATE_HOME`, and `XDG_DATA_HOME` default to `~/.cache`, `~/.local/state`, and `~/.local/share`. A value that is not absolute is ignored, as the XDG specification says. Every platform other than Windows and macOS uses the Linux column.
 - `data` holds everything the user would lose: databases, settings, corrections, and files the user made. It is the same on every OS, so that the user finds it.
@@ -74,7 +75,7 @@ An empty variable counts as unset. A flag or a `MEMEX_*` variable that is not an
 
 `MEMEX_HOME` is for development and test runs (for example, an agent run points it at a scratch folder). Do not set it as a permanent user variable.
 
-`MEMEX_LOCAL_ROOT` (since 1.2) is a folder for the machine-local files: `cache`, `logs` and `state`. `MEMEX_HOME` does not move them, on purpose: a user can point `MEMEX_HOME` at a network or synced folder, and caches, tokens and locks must not follow it there. A test or sandbox run sets `MEMEX_LOCAL_ROOT` as well as `MEMEX_HOME`, so that it writes nothing to the real profile. It has the same rules as the other `MEMEX_*` folder variables: an empty value counts as unset, and a value that is not an absolute path is an error (`relative-path`). It does not move `packs`, `apps` or `locations.json`. Users do not normally set it.
+`MEMEX_LOCAL_ROOT` (since 1.2) is a folder for the machine-local files: `cache`, `logs` and `state`. `MEMEX_HOME` does not move them, on purpose: a user can point `MEMEX_HOME` at a network or synced folder, and caches, tokens and locks must not follow it there. A test or sandbox run sets `MEMEX_LOCAL_ROOT` as well as `MEMEX_HOME`, so that it writes nothing to the real profile. It has the same rules as the other `MEMEX_*` folder variables: an empty value counts as unset, and a value that is not an absolute path is an error (`relative-path`). It does not move `packs`, `apps` or `locations.json`. Users do not normally set it. Keep it apart from the data folders: if it is the same folder as `MEMEX_HOME`, the machine-local folders of an app end up inside its data folder (`<root>/<App>/State` beside `<root>/<App>`'s data), where a scan, backup or sync sees them. A sandbox uses two folders, for example `<scratch>/home` and `<scratch>/local`.
 
 ## Retired variables
 
