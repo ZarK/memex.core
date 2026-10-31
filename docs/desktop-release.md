@@ -23,6 +23,11 @@ run next, and then the second workflow makes a draft GitHub release. The owner r
 Every other run (a branch push, a manual run) is a dry run: the same builds and smoke tests, with the
 installers kept as workflow artifacts for 7 days, and no attestations and no release.
 
+An app with `builder.updates` also publishes the update files that its installed copies read: `latest.yml` (`rc.yml`
+for a release candidate), `latest-linux.yml` and the blockmaps. Each build job uploads them with its installers
+(`UPDATE-FILES-<os>.txt` lists them), the release set joins them, and the draft release attaches them. See
+[Updates](../packages/desktop/README.md#updates).
+
 The installers are named `<Product.With.Dots>-<version>-<windows|macos|linux>-<arch>.<ext>`:
 
 | System | Installer |

@@ -62,6 +62,9 @@ jobs:
             exit 1
           fi
           mapfile -t assets < <(sed -E 's/^[0-9a-f]{64}  //' SHA256SUMS.txt)
+          # The update files that the installed apps read: electron-updater finds latest.yml (rc.yml for a release
+          # candidate) and the blockmaps on the release.
+          mapfile -t updates < <(ls | grep -E '\.(yml|blockmap)$' || true)
           product="${BASE//./ }"
           {
             printf '%s %s.\n\n' "$product" "${TAG#v}"
@@ -80,4 +83,4 @@ jobs:
           cat "$RUNNER_TEMP/notes.md"
           flags=(--draft --verify-tag)
           if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
-          gh release create "$TAG" "${flags[@]}" --title "$product ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" "${assets[@]}" SHA256SUMS.txt
+          gh release create "$TAG" "${flags[@]}" --title "$product ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" "${assets[@]}" "${updates[@]}" SHA256SUMS.txt

@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { SERVICES_DMG_NOTE, builderConfig, desktopAsset, executableName, type BuilderOptions } from "./builder.js";
 import { writeCliShim } from "./cli-shim.js";
 import { readServiceManifest, serviceTarget, stageServices } from "./services.js";
-import { assertReleaseVersion, inspectReleaseAsar, normalizeLinuxArtifactNames, readPackageVersion, releaseTagFromEnv, writeChecksums, type AsarRules } from "./release.js";
+import { assertReleaseVersion, checkUpdateFiles, inspectReleaseAsar, normalizeLinuxArtifactNames, readPackageVersion, releaseTagFromEnv, writeChecksums, type AsarRules } from "./release.js";
 
 /**
  * memex-desktop.config.mjs: one file per app that says how it is packed. Paths are relative to the file's folder.
@@ -61,6 +61,8 @@ export interface PackResult {
   release: string;
   archives: string[];
   checksums?: { outputPath: string; names: string[] };
+  /** The update files to publish beside the installers (the app has `builder.updates`). Also listed in UPDATE-FILES.txt. */
+  updateFiles?: string[];
 }
 
 export async function loadPackConfig(file: string): Promise<DesktopPackConfig> {
@@ -146,5 +148,12 @@ export async function pack(options: PackOptions): Promise<PackResult> {
   for (const entry of normalizeLinuxArtifactNames(release, base)) log(`Renamed ${entry.from} to ${entry.to}`);
   const checksums = writeChecksums(release, base);
   log(`Wrote ${checksums.names.length} checksums to ${checksums.outputPath}`);
-  return { version, release, archives: inspected.archives, checksums };
+  let updateFiles: string[] | undefined;
+  if (builder.updates) {
+    // The installers keep their names after the rename above, so the update file lists the files that are there.
+    updateFiles = checkUpdateFiles(release, version, process.platform);
+    writeFileSync(path.join(release, "UPDATE-FILES.txt"), updateFiles.map((name) => `${name}\n`).join(""));
+    log(`Checked ${updateFiles.length} update files against the installers: ${updateFiles.join(", ") || "none on this platform"}`);
+  }
+  return { version, release, archives: inspected.archives, checksums, ...(updateFiles ? { updateFiles } : {}) };
 }

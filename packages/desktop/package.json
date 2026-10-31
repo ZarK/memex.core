@@ -47,7 +47,8 @@
   },
   "dependencies": {
     "@tjalve/memex-node-client": "workspace:*",
-    "@tjalve/memex-storage": "workspace:*"
+    "@tjalve/memex-storage": "workspace:*",
+    "electron-updater": "6.8.10"
   },
   "peerDependencies": {
     "electron": ">=44.7.0"
@@ -59,6 +60,7 @@
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "builder-util-runtime": "9.7.0",
     "electron": "44.7.0",
     "typescript": "5.9.2",
     "vitest": "4.1.11"

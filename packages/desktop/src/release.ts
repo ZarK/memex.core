@@ -122,6 +122,77 @@ function writeChecksumPayload(outputPath: string, entries: Map<string, string>):
   return { outputPath, names: [...entries.keys()].sort() };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Update files: the files electron-updater reads from a release.
+
+/** The channel of a version: the name of its prerelease part (1.0.0-rc.2 is rc), else latest. */
+export function updateChannelOf(version: string): string {
+  return /^\d+\.\d+\.\d+-([a-z]+)/.exec(version)?.[1] ?? "latest";
+}
+
+/** The update file name that electron-builder writes for a platform; macOS builds none (they have no zip to update from). */
+export function updateFileName(version: string, platform: string): string | null {
+  const channel = updateChannelOf(version);
+  if (platform === "win32") return `${channel}.yml`;
+  if (platform === "linux") return `${channel}-linux.yml`;
+  return null;
+}
+
+/** The version and the url and sha512 entries of an update file (the part of YAML that electron-builder writes). */
+export function parseUpdateFile(text: string): { version: string; files: Array<{ url: string; sha512: string }> } {
+  const unquote = (value: string) => value.trim().replace(/^(['"])(.*)\1$/, "$2");
+  let version: string | undefined;
+  const files: Array<{ url: string; sha512: string }> = [];
+  let url: string | undefined;
+  let inFiles = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^\S/.test(line)) {
+      inFiles = line.startsWith("files:");
+      const top = /^version:\s*(.+)$/.exec(line);
+      if (top) version = unquote(top[1]!);
+      continue;
+    }
+    if (!inFiles) continue;
+    const entry = /^\s*-\s+url:\s*(.+)$/.exec(line);
+    if (entry) {
+      url = unquote(entry[1]!);
+      continue;
+    }
+    const digest = /^\s+sha512:\s*(.+)$/.exec(line);
+    if (digest && url !== undefined) {
+      files.push({ url, sha512: unquote(digest[1]!) });
+      url = undefined;
+    }
+  }
+  if (!version) throw new Error("The update file has no version.");
+  if (files.length === 0) throw new Error("The update file lists no files.");
+  return { version, files };
+}
+
+/**
+ * Checks the update file of a build and returns the update files to publish with the release: the update file and the
+ * blockmaps of the installers it lists. Every file in the update file must exist in the folder, with the sha512 that
+ * the file lists, and the version must be the build's.
+ */
+export function checkUpdateFiles(directory: string, version: string, platform: string): string[] {
+  const name = updateFileName(version, platform);
+  if (name === null) return [];
+  const file = path.join(directory, name);
+  if (!existsSync(file)) throw new Error(`electron-builder wrote no ${name} in ${directory}; the installed app could not find updates.`);
+  const info = parseUpdateFile(readFileSync(file, "utf8"));
+  if (info.version !== version) throw new Error(`${name} is for version ${info.version}, not ${version}.`);
+  const names = [name];
+  for (const entry of info.files) {
+    if (entry.url !== path.basename(entry.url)) throw new Error(`${name} names a file outside the release: ${entry.url}`);
+    const target = path.join(directory, entry.url);
+    if (!existsSync(target)) throw new Error(`${name} lists ${entry.url}, which is not in ${directory}.`);
+    const digest = createHash("sha512").update(readFileSync(target)).digest("base64");
+    if (digest !== entry.sha512) throw new Error(`${name} lists another sha512 for ${entry.url} than the file has.`);
+    if (existsSync(`${target}.blockmap`)) names.push(`${entry.url}.blockmap`);
+  }
+  return names;
+}
+
 /** Writes SHA256SUMS.txt for every shared installer in the folder (sha256sum -c reads it). */
 export function writeChecksums(directory: string, base: string, outputPath = path.join(directory, "SHA256SUMS.txt")): { outputPath: string; names: string[] } {
   normalizeLinuxArtifactNames(directory, base);

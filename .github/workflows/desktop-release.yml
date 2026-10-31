@@ -342,6 +342,16 @@ jobs:
             cp "$RELEASE_DIR/$name" "$staged/"
           done <<< "$names"
           cp "$RELEASE_DIR/SHA256SUMS.txt" "$staged/SHA256SUMS-$ID.txt"
+          # The update files that the installed app reads (an app with builder.updates): only plain file names.
+          if [ -f "$RELEASE_DIR/UPDATE-FILES.txt" ]; then
+            while IFS= read -r name; do
+              [ -n "$name" ] || continue
+              case "$name" in */* | *\\* | .*) echo "::error::$name is not a plain file name."; exit 1 ;; esac
+              case "$name" in *.yml | *.blockmap) ;; *) echo "::error::$name is not an update file."; exit 1 ;; esac
+              cp "$RELEASE_DIR/$name" "$staged/"
+            done < "$RELEASE_DIR/UPDATE-FILES.txt"
+            cp "$RELEASE_DIR/UPDATE-FILES.txt" "$staged/UPDATE-FILES-$ID.txt"
+          fi
           cd "$staged"
           if command -v sha256sum > /dev/null; then sha256sum -c "SHA256SUMS-$ID.txt"; else shasum -a 256 -c "SHA256SUMS-$ID.txt"; fi
           ls -l
@@ -554,6 +564,17 @@ jobs:
           mkdir -p ../release-set
           while IFS= read -r name; do cp "$name" ../release-set/; done < <(sed -E 's/^[0-9a-f]{64}  //' SHA256SUMS.txt)
           cp SHA256SUMS.txt ../release-set/
+          # The update files of every platform (the lists UPDATE-FILES-<os>.txt), beside the installers.
+          for list in UPDATE-FILES-*.txt; do
+            [ -e "$list" ] || continue
+            while IFS= read -r name; do
+              [ -n "$name" ] || continue
+              case "$name" in */* | *\\* | .*) echo "::error::$name is not a plain file name."; exit 1 ;; esac
+              case "$name" in *.yml | *.blockmap) ;; *) echo "::error::$name is not an update file."; exit 1 ;; esac
+              [ -f "$name" ] || { echo "::error::$list lists $name, which was not uploaded."; exit 1; }
+              cp "$name" ../release-set/
+            done < "$list"
+          done
           cd ../release-set
           sha256sum -c SHA256SUMS.txt
           ls -l

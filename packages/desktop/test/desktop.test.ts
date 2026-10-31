@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -10,7 +11,7 @@ import { assertOutsideInstall, isInsideDirectory, packagedInstallDirectory } fro
 import { buildIcns, buildIco } from "../src/icons.js";
 import { aboutPageHtml, crashPageHtml, escapeHtml, parseNotices } from "../src/pages.js";
 import { createReadyLineReader, formatReadyLine, isAllowedAppUrl, isAllowedExternalUrl, parseReadyLine } from "../src/ready-line.js";
-import { FIRST_PARTY_MODULES, assertPackedAppFiles, assertReleaseVersion, artifactPattern, extractAsar, extractRelease, isReleaseCandidate, listAsarFiles, mergeBuilderChecksums, nonRegistryPackages, normalizeLinuxArtifactNames, packageOfPath, parseReleaseTag, readPackageVersion, writeChecksums } from "../src/release.js";
+import { FIRST_PARTY_MODULES, checkUpdateFiles, parseUpdateFile, updateChannelOf, updateFileName, assertPackedAppFiles, assertReleaseVersion, artifactPattern, extractAsar, extractRelease, isReleaseCandidate, listAsarFiles, mergeBuilderChecksums, nonRegistryPackages, normalizeLinuxArtifactNames, packageOfPath, parseReleaseTag, readPackageVersion, writeChecksums } from "../src/release.js";
 import { SMOKE_ENV, createSmokeRecorder, pageOutcome, smokeEventLine, smokeFolder } from "../src/smoke.js";
 import { DESKTOP_ENV, announceReady, desktopLaunch, macAppBundle, onDesktopStop, openCommand, openDesktopApp } from "../src/server.js";
 
@@ -580,5 +581,58 @@ describe("smoke test", () => {
     const line = smokeEventLine({ type: "server-ready", announcement: { app: "hello", url: "http://127.0.0.1:4000", tokenFile: TOKEN_FILE, port: 4000 }, pid: 7, window: { secret: true } }, new Date(0));
     expect(JSON.parse(line)).toEqual({ at: "1970-01-01T00:00:00.000Z", type: "server-ready", announcement: { app: "hello", url: "http://127.0.0.1:4000" }, pid: 7 });
     expect(line.endsWith("\n")).toBe(true);
+  });
+});
+
+describe("update files", () => {
+  const installer = Buffer.from("MZ installer bytes");
+  const sha512 = createHash("sha512").update(installer).digest("base64");
+  const text = (version: string, digest = sha512, url = "Memex.Hello-" + version + "-windows-x64.exe") =>
+    `version: ${version}\nfiles:\n  - url: ${url}\n    sha512: ${digest}\n    size: ${installer.length}\npath: ${url}\nsha512: ${digest}\nreleaseDate: '2026-12-11T09:00:00.000Z'\n`;
+
+  function release(version: string, file: string, body: string, extra: string[] = []): string {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "memex-update-files-"));
+    writeFileSync(path.join(dir, `Memex.Hello-${version}-windows-x64.exe`), installer);
+    writeFileSync(path.join(dir, file), body);
+    for (const name of extra) writeFileSync(path.join(dir, name), "map");
+    return dir;
+  }
+
+  it("tells the channel and the update file of a version", () => {
+    expect(updateChannelOf("1.0.0")).toBe("latest");
+    expect(updateChannelOf("1.0.0-rc.1")).toBe("rc");
+    expect(updateFileName("1.0.0", "win32")).toBe("latest.yml");
+    expect(updateFileName("1.0.0-rc.1", "linux")).toBe("rc-linux.yml");
+    expect(updateFileName("1.0.0", "darwin")).toBeNull();
+  });
+
+  it("reads the files of an update file", () => {
+    expect(parseUpdateFile(text("1.0.0"))).toEqual({ version: "1.0.0", files: [{ url: "Memex.Hello-1.0.0-windows-x64.exe", sha512 }] });
+    expect(() => parseUpdateFile("files:\n")).toThrow(/version/);
+    expect(() => parseUpdateFile("version: 1.0.0\n")).toThrow(/no files/);
+  });
+
+  it("accepts an update file that matches the installers and lists their blockmaps", () => {
+    const dir = release("1.0.0", "latest.yml", text("1.0.0"), ["Memex.Hello-1.0.0-windows-x64.exe.blockmap", "builder-debug.yml"]);
+    expect(checkUpdateFiles(dir, "1.0.0", "win32")).toEqual(["latest.yml", "Memex.Hello-1.0.0-windows-x64.exe.blockmap"]);
+    const rc = release("1.0.0-rc.2", "rc.yml", text("1.0.0-rc.2"));
+    expect(checkUpdateFiles(rc, "1.0.0-rc.2", "win32")).toEqual(["rc.yml"]);
+    expect(checkUpdateFiles(rc, "1.0.0-rc.2", "darwin")).toEqual([]);
+  });
+
+  it("refuses a missing file, another version, another digest, a missing installer or a path", () => {
+    const empty = mkdtempSync(path.join(os.tmpdir(), "memex-update-files-"));
+    expect(() => checkUpdateFiles(empty, "1.0.0", "win32")).toThrow(/no latest\.yml/);
+    expect(() => checkUpdateFiles(release("1.0.0", "latest.yml", text("1.0.1")), "1.0.0", "win32")).toThrow(/version 1\.0\.1/);
+    expect(() => checkUpdateFiles(release("1.0.0", "latest.yml", text("1.0.0", createHash("sha512").update("other").digest("base64"))), "1.0.0", "win32")).toThrow(/another sha512/);
+    expect(() => checkUpdateFiles(release("1.0.0", "latest.yml", text("1.0.0", sha512, "Memex.Hello-1.0.0-windows-arm64.exe")), "1.0.0", "win32")).toThrow(/not in/);
+    expect(() => checkUpdateFiles(release("1.0.0", "latest.yml", text("1.0.0", sha512, "../x.exe")), "1.0.0", "win32")).toThrow(/outside/);
+  });
+
+  it("writes the update files only for an app with a release repository", () => {
+    const options = { app: "hello", productName: "Memex Hello", files: ["main.mjs"] };
+    expect(builderConfig(options).publish).toBeNull();
+    expect(builderConfig({ ...options, updates: { owner: "ZarK", repo: "memex.hello" } }).publish).toEqual({ provider: "github", owner: "ZarK", repo: "memex.hello" });
+    expect(() => builderConfig({ ...options, updates: { owner: "Zar/K", repo: "x" } })).toThrow(/owner/);
   });
 });

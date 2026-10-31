@@ -13,3 +13,5 @@ export type { ReadyAnnouncement, ReadyLineReader } from "./ready-line.js";
 export { ABOUT_URL, CRASH_URL, SHELL_SCHEME, aboutPageHtml, crashPageHtml, parseNotices } from "./pages.js";
 export type { AboutInfo, CrashInfo, NoticeComponent, NoticesFile } from "./pages.js";
 export { installedCliShim } from "./cli-shim.js";
+export { UPDATES_ENV, UpdateController, channelOfVersion, parseUpdateFeed, readUpdateSettings, updateSupport, writeUpdateSettings } from "./updates.js";
+export type { UpdateChannel, UpdateFeed, UpdateSettings, UpdateState, UpdaterLike } from "./updates.js";
