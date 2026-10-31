@@ -284,6 +284,13 @@ export function memexPaths(input: MemexPathsInput): MemexPaths {
     appsDefault = p.join(xdgData, "memex", "apps");
   }
 
+  // MEMEX_LOCAL_ROOT moves the machine-local folders (cache, logs, state) to a chosen folder: tests and sandboxes set it.
+  const localRoot = required(p, "MEMEX_LOCAL_ROOT", env.MEMEX_LOCAL_ROOT);
+  if (localRoot !== undefined) {
+    cache = p.join(localRoot, folder, "Cache");
+    logs = p.join(localRoot, folder, "Logs");
+    state = p.join(localRoot, folder, "State");
+  }
   return {
     data,
     cache: chosen.cache ?? cache,
