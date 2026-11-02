@@ -96,7 +96,18 @@ describe("the holder of an app lock", () => {
   it("counts a process that cannot be read as the holder", async () => {
     await writeLock(2 ** 22 + 14, new Date());
     const unreadable: ProcessReader = async () => ({ name: "", started: null, unreadable: true });
-    await expect(acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: unreadable })).rejects.toBeInstanceOf(AppLockedError);
+    const error = await acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: unreadable }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AppLockedError);
+    // The app says plainly why it will not start.
+    expect((error as AppLockedError).message).toMatch(/would not tell what process \d+ is/);
+    expect((error as AppLockedError).message).toMatch(/remove the lock file/);
+  });
+
+  it("does not look at the process of a free lock", async () => {
+    let reads = 0;
+    const lock = await acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: async () => (reads++, null) });
+    expect(reads).toBe(0);
+    await lock.release();
   });
 
   it("keeps a lock that an instance took long after it started", async () => {

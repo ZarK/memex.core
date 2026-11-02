@@ -15,11 +15,14 @@ export interface AppLockInfo {
 export class AppLockedError extends Error {
   readonly code = "locked";
   readonly holder: AppLockInfo | null;
-  constructor(app: string, data: string, holder: AppLockInfo | null) {
+  constructor(app: string, data: string, holder: AppLockInfo | null, unchecked = false) {
     super(
       `Another ${app} is already running with the data folder ${data}` +
         (holder ? ` (process ${holder.pid}, started ${holder.startedAt}).` : ".") +
-        " Close it first, or switch to it.",
+        " Close it first, or switch to it." +
+        (unchecked && holder
+          ? ` This computer would not tell what process ${holder.pid} is, so ${app} cannot tell whether that lock is left from an app that was killed. If process ${holder.pid} is not ${app}, remove the lock file and start again.`
+          : ""),
     );
     this.name = "AppLockedError";
     this.holder = holder;
@@ -156,7 +159,11 @@ export async function acquireAppLock(options: AppLockOptions): Promise<AppLock> 
       holder = await readLock(file);
       const stale =
         holder === null ? await unreadableAndOld(file) : holder.hostname === info.hostname && (await staleHolder(holder, bootTime, read));
-      if (!stale) throw new AppLockedError(options.app, info.data, holder);
+      if (!stale) {
+        // Held. When the system would not say what the process is, the lock is respected and the message says so.
+        const unchecked = holder !== null && (await read(holder.pid))?.unreadable === true;
+        throw new AppLockedError(options.app, info.data, holder, unchecked);
+      }
       const claim = await claimStaleLock(file, holder);
       if (claim !== "retry") throw new AppLockedError(options.app, info.data, claim.holder);
     }

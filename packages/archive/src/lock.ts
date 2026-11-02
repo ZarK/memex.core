@@ -8,8 +8,14 @@ import { archiveCacheDir, type ArchiveContext } from "./paths.js";
 
 export class ArchiveLockedError extends ArchiveError {
   readonly holder: LockInfo | null;
-  constructor(dir: string, holder: LockInfo | null) {
-    super("locked", `Another run holds the lock for ${dir}${holder ? ` (process ${holder.pid} since ${holder.startedAt})` : ""}`);
+  constructor(dir: string, holder: LockInfo | null, unchecked = false) {
+    super(
+      "locked",
+      `Another run holds the lock for ${dir}${holder ? ` (process ${holder.pid} since ${holder.startedAt})` : ""}` +
+        (unchecked && holder
+          ? `. This computer would not tell what process ${holder.pid} is, so the run cannot tell whether that lock is left from a run that was killed. If process ${holder.pid} is not a run of this program, remove the lock file and start again.`
+          : ""),
+    );
     this.name = "ArchiveLockedError";
     this.holder = holder;
   }
@@ -161,7 +167,11 @@ export async function acquireRunLock(dir: string, options: LockOptions = {}): Pr
         holder === null
           ? await unreadableAndOld(file)
           : holder.hostname === info.hostname && (await staleHolder(holder, bootTime, read));
-      if (!stale) throw new ArchiveLockedError(dir, holder);
+      if (!stale) {
+        // Held. When the system would not say what the process is, the lock is respected and the message says so.
+        const unchecked = holder !== null && (await read(holder.pid))?.unreadable === true;
+        throw new ArchiveLockedError(dir, holder, unchecked);
+      }
       const claim = await claimStaleLock(file, holder);
       if (claim !== "retry") throw new ArchiveLockedError(dir, claim.holder);
     }

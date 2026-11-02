@@ -69,6 +69,14 @@ describe("the holder of a run lock", () => {
     await lock.release();
   });
 
+  it("counts a process that cannot be read as the holder, and says why it will not start", async () => {
+    await writeLock(2 ** 22 + 14, new Date());
+    const unreadable: ProcessReader = async () => ({ name: "", started: null, unreadable: true });
+    const error = await acquireRunLock(dir, { lockDir, bootTime: BOOT(), readProcess: unreadable }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ArchiveLockedError);
+    expect((error as ArchiveLockedError).message).toMatch(/would not tell what process \d+ is/);
+  });
+
   it("puts back a lock that another run took in between, and does not take it", async () => {
     const child = otherProgram();
     const file = await writeLock(child.pid!, new Date());
