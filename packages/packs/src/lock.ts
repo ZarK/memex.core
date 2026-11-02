@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PackError } from "./manifest.js";
-import { processStartedAt } from "@tjalve/memex-storage";
+import { processCanHaveWritten } from "@tjalve/memex-storage";
 
 /** The lock file of the store: only one program changes the store at a time (contracts/packs.md, Store layout). */
 export const STORE_LOCK = ".lock";
@@ -32,9 +32,6 @@ export interface StoreLockOptions {
   /** How long to wait for a lock that another program holds. Default 30 s, as Memex.Node. */
   waitMs?: number;
 }
-
-/** How far the start time of a process may differ from the start time in its lock: the clock of the lock is read a moment later. */
-const PROCESS_START_TOLERANCE_MS = 5_000;
 
 /** The start time of this process. Memex.Node compares it with the start time that the OS reports, within 2 s. */
 function processStart(): string {
@@ -126,9 +123,10 @@ async function isStale(file: string, holder: StoreLockHolder): Promise<boolean> 
   if (!isThisComputer(holder.hostname)) return false;
   const stat = await fs.stat(file).catch(() => null);
   if (stat !== null && stat.mtimeMs < bootTime()) return true;
-  // The lock records when its own process started (as Memex.Node's locks do), so a process that started at another time, within
-  // five seconds, got its number from the one that wrote the lock. A process that cannot be read, or of another account, is the holder.
-  return !(await processStartedAt(holder.pid, holder.startedAt, PROCESS_START_TOLERANCE_MS));
+  // The lock records when its own process started, so a process that started after that got its number from the one that wrote the
+  // lock. Only that side is judged: the lock's time is read from this runtime's clock and the system's start time from the system's,
+  // which differ by a moment, and by more when the clock was stepped. A process that cannot be read, or of another account, is the holder.
+  return !(await processCanHaveWritten(holder.pid, holder.startedAt));
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

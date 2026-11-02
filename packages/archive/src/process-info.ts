@@ -192,17 +192,3 @@ export function processCanHaveWrittenSync(pid: number, recordedAt: string | unde
   if (Number.isNaN(recorded)) return true;
   return found.started <= recorded + RECORD_MARGIN_MS;
 }
-
-/**
- * Whether the process that a lock names started when the lock says it did (a lock that records the start of its own process), within
- * `toleranceMs`. A process that cannot be read, or whose start time the system keeps back (another account's process, which a store on a
- * shared drive can legitimately have), counts as the holder.
- */
-export async function processStartedAt(pid: number, startedAt: string, toleranceMs: number, read: ProcessReader = readSystemProcess): Promise<boolean> {
-  const found = await read(pid);
-  if (found === null) return false;
-  if (found.unreadable || found.started === null) return true;
-  const recorded = Date.parse(startedAt);
-  if (Number.isNaN(recorded)) return true;
-  return Math.abs(found.started - recorded) <= toleranceMs;
-}
