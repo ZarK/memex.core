@@ -43,6 +43,7 @@ import {
   type ArchiveIndex,
 } from "../src/index.js";
 import { main } from "../src/cli.js";
+import { ownProgramName } from "../src/process-info.js";
 import { PackBuilder } from "../src/pack.js";
 import { ZipWriter } from "../src/zip.js";
 
