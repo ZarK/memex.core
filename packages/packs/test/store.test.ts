@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
+import { readSystemProcess } from "@tjalve/memex-storage";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -253,9 +254,21 @@ describe("the layout writer", () => {
     const m = manifest();
     const staging = path.join(root, ".staging", ...packFolder(m).split("/"));
     await fs.mkdir(staging, { recursive: true });
-    await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: process.ppid, startedAt: "2026-10-26T00:00:00Z", hostname: lockHostname(), program: "study" }));
+    // The lock records when its own process started, as the system tells it.
+    const parent = await readSystemProcess(process.ppid);
+    const startedAt = parent?.started != null ? new Date(parent.started).toISOString() : "2026-10-26T00:00:00Z";
+    await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: process.ppid, startedAt, hostname: lockHostname(), program: "study" }));
     await expect(installPack(m, { root, download: local })).rejects.toMatchObject({ code: "install_busy" });
     expect(requests).toEqual([]);
+  });
+  it("takes over a download lock whose number went to another process that started at another time", async () => {
+    const m = manifest();
+    const staging = path.join(root, ".staging", ...packFolder(m).split("/"));
+    await fs.mkdir(staging, { recursive: true });
+    // A live process, but not the one that wrote the lock: it started long after the date the lock names.
+    await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: process.ppid, startedAt: "2020-01-01T00:00:00Z", hostname: lockHostname(), program: "study" }));
+    await installPack(m, { root, download: local });
+    expect(requests.length).toBeGreaterThan(0);
   });
   it("keeps entries and keys of packs.json that it does not know", async () => {
     await fs.writeFile(path.join(root, "packs.json"), JSON.stringify({ format: "memex.packs/1", note: "x", packs: { other: { version: "1", digest: "a".repeat(64), folder: "other/1-aaaaaaaa", activatedAt: "2026-10-26T00:00:00Z", future: 1 } } }));

@@ -28,6 +28,7 @@ import {
 } from "@tjalve/memex-sqlite";
 import { createEntity, findEntityByProvenance, getEntity, link } from "@tjalve/memex-schema";
 import type { ListFolderOptions } from "@tjalve/memex-folders";
+import { processCanHaveWrittenSync } from "@tjalve/memex-archive";
 import { canonicalJson, contentHash, hashChunks, sha256 } from "./hash.js";
 import { KEEP_BYTES, RootError, expandArchive, isGzip, isSystemFile, isZip, listRoot, sampleOf, type Entry } from "./walk.js";
 import type {
@@ -141,15 +142,11 @@ export function totalsOf(files: FileReport[]): ImportTotals {
 const RUNNING = new Set<string>();
 
 /** Whether the process that started a running batch is still there. A batch of another computer counts as live. */
-function ownerAlive(batchId: string, pid: number | null, host: string | null): boolean {
+function ownerAlive(batchId: string, pid: number | null, host: string | null, startedAt: string | null): boolean {
   if (pid === null || host !== os.hostname()) return true;
   if (pid === process.pid) return RUNNING.has(batchId);
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
+  // A process that started after the batch did got its number from the one that ran the batch.
+  return processCanHaveWrittenSync(pid, startedAt ?? undefined);
 }
 
 class Rollback extends Error {
@@ -240,10 +237,10 @@ export class Importer {
    * totals rebuilt from its files, so that it can be undone. Returns the ids of the batches it marked.
    */
   recoverStale(): string[] {
-    const rows = this.db.all<{ id: string; owner_pid: number | null; owner_host: string | null }>(
-      "SELECT id, owner_pid, owner_host FROM import_batch WHERE state = 'running'",
+    const rows = this.db.all<{ id: string; owner_pid: number | null; owner_host: string | null; started_at: string | null }>(
+      "SELECT id, owner_pid, owner_host, started_at FROM import_batch WHERE state = 'running'",
     );
-    const stale = rows.filter((r) => !ownerAlive(r.id, r.owner_pid === null ? null : Number(r.owner_pid), r.owner_host));
+    const stale = rows.filter((r) => !ownerAlive(r.id, r.owner_pid === null ? null : Number(r.owner_pid), r.owner_host, r.started_at));
     for (const { id } of stale) {
       const files = this.db.all<{ outcome: string; records_json: string; change_id: string | null }>(
         "SELECT outcome, records_json, change_id FROM import_file WHERE batch_id = ? ORDER BY seq",

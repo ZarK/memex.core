@@ -236,5 +236,8 @@ describe("the services folder", () => {
     expect(order).toEqual(["a start", "a end", "b"]);
     writeFileSync(path.join(services, "services.lock"), JSON.stringify({ pid: 2 ** 22 + 12345, hostname: os.hostname(), startedAt: "" }));
     expect(await withServicesLock(services, 2000, async () => "taken over")).toBe("taken over");
+    // A lock whose number is a live process that started after the lock was written is another process: it is taken over too.
+    writeFileSync(path.join(services, "services.lock"), JSON.stringify({ pid: process.pid, hostname: os.hostname(), startedAt: "2020-01-01T00:00:00.000Z" }));
+    expect(await withServicesLock(services, 2000, async () => "taken over again")).toBe("taken over again");
   });
 });

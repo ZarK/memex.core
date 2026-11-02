@@ -280,6 +280,9 @@ describe("import", () => {
     db.run("UPDATE import_batch SET state = 'running', owner_pid = ? WHERE id = ?", process.ppid, again.batchId);
     expect(() => importer.undo(again.batchId)).toThrow(/still running in process/);
     expect(importer.batch(again.batchId)!.batch.state).toBe("running");
+    // A process that is alive but started after the batch did, got its number from the one that ran it: the batch is stopped.
+    db.run("UPDATE import_batch SET started_at = '2020-01-01T00:00:00.000Z' WHERE id = ?", again.batchId);
+    expect(importer.batch(again.batchId)!.batch.state).toBe("stopped");
     db.close();
   });
 

@@ -149,3 +149,60 @@ export async function holderStatus(pid: number, lockedAt: string, read: ProcessR
 export async function holderIsLive(pid: number, lockedAt: string, read: ProcessReader = readSystemProcess, program?: string): Promise<boolean> {
   return (await holderStatus(pid, lockedAt, read, program)) !== "gone";
 }
+
+// ---------- for code that cannot wait (a sync API) ----------
+
+/** The same read as readSystemProcess, for code that cannot wait. */
+export function readSystemProcessSync(pid: number): ProcessInfo | null {
+  if (!processExists(pid)) return null;
+  try {
+    if (process.platform === "linux") {
+      const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+      const close = stat.lastIndexOf(")");
+      const name = stat.slice(stat.indexOf("(") + 1, close);
+      const ticks = Number(stat.slice(close + 2).split(" ")[19]);
+      const boot = /^btime (\d+)$/m.exec(readFileSync("/proc/stat", "utf8"));
+      return !boot || !Number.isFinite(ticks) ? { name, started: null } : { name, started: Number(boot[1]) * 1000 + (ticks / 100) * 1000 };
+    }
+    if (process.platform === "win32") {
+      const script = `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($p) { $p.ProcessName; try { $p.StartTime.ToUniversalTime().ToString('o') } catch { '' } }`;
+      const out = execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { timeout: 15_000, windowsHide: true, encoding: "utf8" });
+      const [name, started] = out.split(/\r?\n/).map((line) => line.trim());
+      if (!name) return null;
+      const time = started ? Date.parse(started) : NaN;
+      return { name, started: Number.isNaN(time) ? null : time };
+    }
+    const line = execFileSync("ps", ["-o", "lstart=", "-o", "comm=", "-p", String(pid)], { timeout: 10_000, encoding: "utf8", env: { ...process.env, LC_ALL: "C" } }).trim();
+    if (!line) return null;
+    const words = line.split(/\s+/);
+    const time = Date.parse(words.slice(0, 5).join(" "));
+    return { name: path.basename(words.slice(5).join(" ")), started: Number.isNaN(time) ? null : time };
+  } catch {
+    if (!processExists(pid)) return null;
+    return { name: "", started: null, unreadable: true };
+  }
+}
+
+/** processCanHaveWritten for code that cannot wait. */
+export function processCanHaveWrittenSync(pid: number, recordedAt: string | undefined, read: (pid: number) => ProcessInfo | null = readSystemProcessSync): boolean {
+  const found = read(pid);
+  if (found === null) return false;
+  if (found.unreadable || found.started === null) return true;
+  const recorded = Date.parse(recordedAt ?? "");
+  if (Number.isNaN(recorded)) return true;
+  return found.started <= recorded + RECORD_MARGIN_MS;
+}
+
+/**
+ * Whether the process that a lock names started when the lock says it did (a lock that records the start of its own process), within
+ * `toleranceMs`. A process that cannot be read, or whose start time the system keeps back (another account's process, which a store on a
+ * shared drive can legitimately have), counts as the holder.
+ */
+export async function processStartedAt(pid: number, startedAt: string, toleranceMs: number, read: ProcessReader = readSystemProcess): Promise<boolean> {
+  const found = await read(pid);
+  if (found === null) return false;
+  if (found.unreadable || found.started === null) return true;
+  const recorded = Date.parse(startedAt);
+  if (Number.isNaN(recorded)) return true;
+  return Math.abs(found.started - recorded) <= toleranceMs;
+}
