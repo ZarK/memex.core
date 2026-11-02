@@ -280,7 +280,7 @@ describe("run lock", () => {
     await lock.release();
 
     // This process "started" at the boot, so a lock written five minutes later is its own.
-    const readProcess = async () => ({ name: path.basename(process.execPath).replace(/\.exe$/i, ""), started: bootTime });
+    const readProcess = async () => ({ name: ownProgramName(), started: bootTime });
     await write("2026-10-23T08:05:00Z");
     await expect(acquireRunLock(dir, { lockDir, bootTime, readProcess })).rejects.toBeInstanceOf(ArchiveLockedError);
 
