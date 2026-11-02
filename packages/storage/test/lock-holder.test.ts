@@ -87,9 +87,29 @@ describe("the holder of an app lock", () => {
     await lock.release();
   });
 
-  it("does not count a process that keeps its start time back as the holder", async () => {
+  it("does not count a process of another program that keeps its start time back as the holder", async () => {
     await writeLock(2 ** 22 + 13, new Date());
-    const lock = await acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: asProgram(null) });
+    const lock = await acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: asProgram(null, "ping") });
+    await lock.release();
+  });
+
+  it("counts a process of the lock's program that keeps its start time back (an elevated instance) as the holder", async () => {
+    await writeLock(2 ** 22 + 16, new Date());
+    await expect(acquireAppLock({ ...options(), bootTime: BOOT(), readProcess: asProgram(null) })).rejects.toBeInstanceOf(AppLockedError);
+  });
+
+  it("keeps the lock of a live instance of another executable of the same app, by the program the lock names", async () => {
+    const started = Date.now() - 20 * 60_000;
+    const file = appLockPath(options());
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    const info = { app: "photos", data: path.resolve(options().data), pid: 2 ** 22 + 17, hostname: os.hostname(), startedAt: new Date(started + 3000).toISOString(), program: "Memex Photos" };
+    await fs.writeFile(file, JSON.stringify(info) + "\n");
+    await expect(acquireAppLock({ ...options(), bootTime: started - 3600_000, readProcess: asProgram(started, "Memex Photos") })).rejects.toBeInstanceOf(AppLockedError);
+  });
+
+  it("writes the program into the lock", async () => {
+    const lock = await acquireAppLock({ ...options(), bootTime: BOOT() });
+    expect(JSON.parse(await fs.readFile(lock.path, "utf8")).program).toBe(ownProgramName());
     await lock.release();
   });
 

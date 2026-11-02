@@ -63,10 +63,15 @@ describe("the holder of a run lock", () => {
     await lock.release();
   });
 
-  it("does not count a process that keeps its start time back as the holder", async () => {
+  it("does not count a process of another program that keeps its start time back as the holder", async () => {
     await writeLock(2 ** 22 + 13, new Date());
-    const lock = await acquireRunLock(dir, { lockDir, bootTime: BOOT(), readProcess: asProgram(null) });
+    const lock = await acquireRunLock(dir, { lockDir, bootTime: BOOT(), readProcess: asProgram(null, "ping") });
     await lock.release();
+  });
+
+  it("counts a process of the lock's program that keeps its start time back as the holder", async () => {
+    await writeLock(2 ** 22 + 16, new Date());
+    await expect(acquireRunLock(dir, { lockDir, bootTime: BOOT(), readProcess: asProgram(null) })).rejects.toBeInstanceOf(ArchiveLockedError);
   });
 
   it("counts a process that cannot be read as the holder, and says why it will not start", async () => {

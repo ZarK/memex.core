@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { holderIsLive, readSystemProcess, type ProcessReader } from "./process-info.js";
+import { holderStatus, ownProgramName, readSystemProcess, type ProcessReader } from "./process-info.js";
 
 export interface AppLockInfo {
   app: string;
@@ -10,6 +10,8 @@ export interface AppLockInfo {
   pid: number;
   hostname: string;
   startedAt: string;
+  /** The program that took the lock, as the system names its process; a process of another program is not the holder. */
+  program?: string;
 }
 
 export class AppLockedError extends Error {
@@ -84,10 +86,11 @@ async function unreadableAndOld(file: string): Promise<boolean> {
  * A lock is stale when it was taken before the last boot, or its process is gone or is no longer the instance that took it (a killed
  * instance leaves its lock, and the system can give its number to another program).
  */
-async function staleHolder(holder: AppLockInfo, bootTime: number, read: ProcessReader): Promise<boolean> {
+async function judgeHolder(holder: AppLockInfo, bootTime: number, read: ProcessReader): Promise<"stale" | "live" | "unknown"> {
   const startedAt = Date.parse(holder.startedAt);
-  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return true;
-  return !(await holderIsLive(holder.pid, holder.startedAt, read));
+  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return "stale";
+  const status = await holderStatus(holder.pid, holder.startedAt, read, holder.program);
+  return status === "gone" ? "stale" : status;
 }
 
 /**
@@ -132,6 +135,7 @@ export async function acquireAppLock(options: AppLockOptions): Promise<AppLock> 
     pid: process.pid,
     hostname: os.hostname(),
     startedAt: new Date().toISOString(),
+    program: ownProgramName(),
   };
   const bootTime = options.bootTime ?? Date.now() - os.uptime() * 1000;
   const read = options.readProcess ?? readSystemProcess;
@@ -157,11 +161,20 @@ export async function acquireAppLock(options: AppLockOptions): Promise<AppLock> 
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       holder = await readLock(file);
-      const stale =
-        holder === null ? await unreadableAndOld(file) : holder.hostname === info.hostname && (await staleHolder(holder, bootTime, read));
+      let stale: boolean;
+      let unchecked = false;
+      if (holder === null) {
+        stale = await unreadableAndOld(file);
+      } else if (holder.hostname !== info.hostname) {
+        stale = false;
+      } else {
+        // The process is looked at once, and only when the lock is held: a free lock never starts a lookup.
+        const verdict = await judgeHolder(holder, bootTime, read);
+        stale = verdict === "stale";
+        unchecked = verdict === "unknown";
+      }
       if (!stale) {
         // Held. When the system would not say what the process is, the lock is respected and the message says so.
-        const unchecked = holder !== null && (await read(holder.pid))?.unreadable === true;
         throw new AppLockedError(options.app, info.data, holder, unchecked);
       }
       const claim = await claimStaleLock(file, holder);

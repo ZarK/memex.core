@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { holderIsLive, readSystemProcess, type ProcessReader } from "./process-info.js";
+import { holderStatus, ownProgramName, readSystemProcess, type ProcessReader } from "./process-info.js";
 import { ArchiveError } from "./layout.js";
 import { archiveCacheDir, type ArchiveContext } from "./paths.js";
 
@@ -26,6 +26,8 @@ export interface LockInfo {
   hostname: string;
   startedAt: string;
   dir: string;
+  /** The program that took the lock, as the system names its process; a process of another program is not the holder. */
+  program?: string;
 }
 
 export interface LockOptions extends ArchiveContext {
@@ -56,10 +58,11 @@ export function lockPath(dir: string, options: ArchiveContext & { lockDir?: stri
  * Whether a lock left on this machine is stale: it was taken before the last boot, or its process is gone or is no longer the
  * run that took it (a killed run leaves its lock, and the system can give its number to another program).
  */
-async function staleHolder(holder: LockInfo, bootTime: number, read: ProcessReader): Promise<boolean> {
+async function judgeHolder(holder: LockInfo, bootTime: number, read: ProcessReader): Promise<"stale" | "live" | "unknown"> {
   const startedAt = Date.parse(holder.startedAt);
-  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return true;
-  return !(await holderIsLive(holder.pid, holder.startedAt, read));
+  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return "stale";
+  const status = await holderStatus(holder.pid, holder.startedAt, read, holder.program);
+  return status === "gone" ? "stale" : status;
 }
 
 async function readLock(file: string): Promise<LockInfo | null> {
@@ -136,6 +139,7 @@ export async function acquireRunLock(dir: string, options: LockOptions = {}): Pr
     hostname: os.hostname(),
     startedAt: new Date().toISOString(),
     dir: path.resolve(dir),
+    program: ownProgramName(),
   };
   const bootTime = options.bootTime ?? Date.now() - os.uptime() * 1000;
   const read = options.readProcess ?? readSystemProcess;
@@ -163,13 +167,20 @@ export async function acquireRunLock(dir: string, options: LockOptions = {}): Pr
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       holder = await readLock(file);
-      const stale =
-        holder === null
-          ? await unreadableAndOld(file)
-          : holder.hostname === info.hostname && (await staleHolder(holder, bootTime, read));
+      let stale: boolean;
+      let unchecked = false;
+      if (holder === null) {
+        stale = await unreadableAndOld(file);
+      } else if (holder.hostname !== info.hostname) {
+        stale = false;
+      } else {
+        // The process is looked at once, and only when the lock is held: a free lock never starts a lookup.
+        const verdict = await judgeHolder(holder, bootTime, read);
+        stale = verdict === "stale";
+        unchecked = verdict === "unknown";
+      }
       if (!stale) {
         // Held. When the system would not say what the process is, the lock is respected and the message says so.
-        const unchecked = holder !== null && (await read(holder.pid))?.unreadable === true;
         throw new ArchiveLockedError(dir, holder, unchecked);
       }
       const claim = await claimStaleLock(file, holder);

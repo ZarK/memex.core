@@ -104,18 +104,27 @@ export async function processCanHaveWritten(pid: number, recordedAt: string | un
   return found.started <= recorded + RECORD_MARGIN_MS;
 }
 
+/** What a lock says about its holder once the process is looked at: `gone`, `live`, or `unknown` (the system would not say). */
+export type HolderStatus = "live" | "gone" | "unknown";
+
 /**
- * Whether the process that holds a lock of this account is still the instance that took it: the number is alive, the program is the
- * one that runs this code, and the lock was not written before the process started. A start time that the system keeps back is
- * another account's process, since a lock lives in the state folder of one account. A process that cannot be read counts as the holder.
+ * Whether the process that holds a lock of this account is still the instance that took it: the number is alive, its program is the
+ * one the lock names (`program`; this program when an older lock names none), and the lock was not written before the process started.
+ * A process of that program whose start time the system keeps back (an elevated instance) is the holder. A process that cannot be read
+ * at all is `unknown`, and the lock is respected.
  */
-export async function holderIsLive(pid: number, lockedAt: string, read: ProcessReader = readSystemProcess): Promise<boolean> {
+export async function holderStatus(pid: number, lockedAt: string, read: ProcessReader = readSystemProcess, program?: string): Promise<HolderStatus> {
   const found = await read(pid);
-  if (found === null) return false;
-  if (found.unreadable) return true;
-  if (!isOwnProgram(found.name)) return false;
-  if (found.started === null) return false;
+  if (found === null) return "gone";
+  if (found.unreadable) return "unknown";
+  if (!isOwnProgram(found.name, program ?? ownProgramName())) return "gone";
+  if (found.started === null) return "live";
   const locked = Date.parse(lockedAt);
-  if (Number.isNaN(locked)) return true;
-  return locked >= found.started - RECORD_MARGIN_MS;
+  if (Number.isNaN(locked)) return "live";
+  return locked >= found.started - RECORD_MARGIN_MS ? "live" : "gone";
+}
+
+/** Whether the lock may be held: anything but gone. */
+export async function holderIsLive(pid: number, lockedAt: string, read: ProcessReader = readSystemProcess, program?: string): Promise<boolean> {
+  return (await holderStatus(pid, lockedAt, read, program)) !== "gone";
 }
