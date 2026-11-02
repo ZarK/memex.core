@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { memexPaths } from "@tjalve/memex-storage";
+import { memexPaths, processCanHaveWritten } from "@tjalve/memex-storage";
 import { z } from "zod";
 import { ORIGIN_HEADER } from "./api-v1.js";
 import { SurfaceError, errorFromBody } from "./errors.js";
@@ -111,15 +111,6 @@ export async function markStopped(app: string, options: AppsOptions & { pid?: nu
 
 // ---------- readers ----------
 
-function processAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
-
 export interface HttpAnswer {
   status: number;
   headers: Record<string, string | string[] | undefined>;
@@ -173,7 +164,9 @@ export async function discover(app: string, options: AppsOptions & { timeoutMs?:
   if (!record) return { app, state: "not-installed", record: null };
   if (!record.running) return { app, state: "stopped", record };
   const stopped = (stale: string): Discovery => ({ app, state: "stopped", record, stale });
-  if (!processAlive(record.running.pid)) return stopped(`The process ${record.running.pid} is gone.`);
+  if (!(await processCanHaveWritten(record.running.pid, record.running.startedAt))) {
+    return stopped(`The process ${record.running.pid} is gone, or the number belongs to another program now.`);
+  }
   if (record.running.url) {
     try {
       const answer = await localRequest(`${record.running.url}/health`, { timeoutMs: options.timeoutMs ?? 2000 });

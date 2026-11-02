@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { holderIsLive, readSystemProcess, type ProcessReader } from "./process-info.js";
 import { ArchiveError } from "./layout.js";
 import { archiveCacheDir, type ArchiveContext } from "./paths.js";
 
@@ -25,6 +26,8 @@ export interface LockOptions extends ArchiveContext {
   lockDir?: string;
   /** The system boot time in ms since the epoch. Defaults to Date.now() - os.uptime() * 1000. */
   bootTime?: number;
+  /** Reads a process by its number. Defaults to the system. A test replaces it. */
+  readProcess?: ProcessReader;
 }
 
 /** A lock taken this long before the computed boot time is from before the boot. Covers the rounding of os.uptime(). */
@@ -43,23 +46,14 @@ export function lockPath(dir: string, options: ArchiveContext & { lockDir?: stri
   return path.join(options.lockDir ?? path.join(archiveCacheDir(options), "locks"), `${name}.lock`);
 }
 
-function processAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
-
 /**
- * Whether a lock left on this machine is stale: it was taken before the last boot (its process
- * id may be in use again by an unrelated process), or its process is gone.
+ * Whether a lock left on this machine is stale: it was taken before the last boot, or its process is gone or is no longer the
+ * run that took it (a killed run leaves its lock, and the system can give its number to another program).
  */
-function staleHolder(holder: LockInfo, bootTime: number): boolean {
+async function staleHolder(holder: LockInfo, bootTime: number, read: ProcessReader): Promise<boolean> {
   const startedAt = Date.parse(holder.startedAt);
   if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return true;
-  return holder.pid !== process.pid && !processAlive(holder.pid);
+  return !(await holderIsLive(holder.pid, holder.startedAt, read));
 }
 
 async function readLock(file: string): Promise<LockInfo | null> {
@@ -83,7 +77,7 @@ function sameLock(a: LockInfo, b: LockInfo): boolean {
  * away, or when the file was already gone or busy; the caller then opens the lock again. When the moved file turns out to
  * be a fresh lock that another run took in between, it is put back and that run is the holder.
  */
-async function claimStaleLock(file: string, judged: LockInfo | null): Promise<"retry" | { holder: LockInfo | null }> {
+export async function claimStaleLock(file: string, judged: LockInfo | null): Promise<"retry" | { holder: LockInfo | null }> {
   const quarantine = `${file}.stale-${process.pid}-${randomBytes(4).toString("hex")}`;
   try {
     await fs.rename(file, quarantine);
@@ -99,14 +93,16 @@ async function claimStaleLock(file: string, judged: LockInfo | null): Promise<"r
   if (moved === null && !(await fs.stat(quarantine).then(() => true, () => false))) return "retry";
   const same = judged === null ? moved === null && (await unreadableAndOld(quarantine)) : moved !== null && sameLock(moved, judged);
   if (!same) {
+    // A fresh lock that another run took in between goes back. EEXIST: a third run took the name meanwhile and is the holder
+    // now, and this lock stays aside.
     try {
       await fs.link(quarantine, file);
+      await fs.rm(quarantine, { force: true });
     } catch (error) {
-      // EEXIST: a third run took the name meanwhile; it is the holder now.
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") await fs.rename(quarantine, file);
     }
   }
-  await fs.rm(quarantine, { force: true });
+  // A stale lock stays under its new name, as the record of what was taken over. Nothing is deleted.
   return same ? "retry" : { holder: moved };
 }
 
@@ -136,6 +132,7 @@ export async function acquireRunLock(dir: string, options: LockOptions = {}): Pr
     dir: path.resolve(dir),
   };
   const bootTime = options.bootTime ?? Date.now() - os.uptime() * 1000;
+  const read = options.readProcess ?? readSystemProcess;
   let holder: LockInfo | null = null;
   for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt++) {
     try {
@@ -163,7 +160,7 @@ export async function acquireRunLock(dir: string, options: LockOptions = {}): Pr
       const stale =
         holder === null
           ? await unreadableAndOld(file)
-          : holder.hostname === info.hostname && staleHolder(holder, bootTime);
+          : holder.hostname === info.hostname && (await staleHolder(holder, bootTime, read));
       if (!stale) throw new ArchiveLockedError(dir, holder);
       const claim = await claimStaleLock(file, holder);
       if (claim !== "retry") throw new ArchiveLockedError(dir, claim.holder);
