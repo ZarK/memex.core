@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -33,6 +34,16 @@ function processExists(pid: number): boolean {
 
 /** The program name of this process, as the system names a process of it. */
 export function ownProgramName(): string {
+  // On Linux the system names a process by its comm, which a program changes by setting process.title (a test runner does).
+  if (process.platform === "linux") {
+    try {
+      const comm = readFileSync("/proc/self/comm", "utf8").trim();
+      if (comm) return comm;
+    } catch {
+      // Fall back to the executable.
+    }
+  }
+
   return path.basename(process.execPath).replace(/\.exe$/i, "");
 }
 

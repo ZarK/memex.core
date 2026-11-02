@@ -107,6 +107,18 @@ describe("the holder of an app lock", () => {
     await expect(acquireAppLock({ ...options(), bootTime: started - 3600_000, readProcess: asProgram(started, "Memex Photos") })).rejects.toBeInstanceOf(AppLockedError);
   });
 
+  it("keeps the lock of this process after it changed its process title", async () => {
+    const title = process.title;
+    try {
+      process.title = "memex-title-test";
+      const lock = await acquireAppLock({ ...options(), bootTime: BOOT() });
+      await expect(acquireAppLock({ ...options(), bootTime: BOOT() })).rejects.toBeInstanceOf(AppLockedError);
+      await lock.release();
+    } finally {
+      process.title = title;
+    }
+  });
+
   it("writes the program into the lock", async () => {
     const lock = await acquireAppLock({ ...options(), bootTime: BOOT() });
     expect(JSON.parse(await fs.readFile(lock.path, "utf8")).program).toBe(ownProgramName());
