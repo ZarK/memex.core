@@ -41,7 +41,7 @@
     "@tjalve/memex-node-client": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
+    "@types/node": "24.19.2",
     "typescript": "5.9.2",
     "vitest": "4.1.11"
   },
