@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { holderStatus, ownProgramName, readSystemProcess, type ProcessReader } from "./process-info.js";
 
 export interface AppLockInfo {
   app: string;
@@ -9,16 +10,21 @@ export interface AppLockInfo {
   pid: number;
   hostname: string;
   startedAt: string;
+  /** The program that took the lock, as the system names its process; a process of another program is not the holder. */
+  program?: string;
 }
 
 export class AppLockedError extends Error {
   readonly code = "locked";
   readonly holder: AppLockInfo | null;
-  constructor(app: string, data: string, holder: AppLockInfo | null) {
+  constructor(app: string, data: string, holder: AppLockInfo | null, unchecked = false) {
     super(
       `Another ${app} is already running with the data folder ${data}` +
         (holder ? ` (process ${holder.pid}, started ${holder.startedAt}).` : ".") +
-        " Close it first, or switch to it.",
+        " Close it first, or switch to it." +
+        (unchecked && holder
+          ? ` This computer would not tell what process ${holder.pid} is, so ${app} cannot tell whether that lock is left from an app that was killed. If process ${holder.pid} is not ${app}, remove the lock file and start again.`
+          : ""),
     );
     this.name = "AppLockedError";
     this.holder = holder;
@@ -38,6 +44,8 @@ export interface AppLockOptions {
   state: string;
   /** The system boot time in ms since the epoch. Defaults to Date.now() - os.uptime() * 1000. */
   bootTime?: number;
+  /** Reads a process by its number. Defaults to the system. A test replaces it. */
+  readProcess?: ProcessReader;
 }
 
 /** A lock taken this long before the computed boot time is from before the boot. Covers the rounding of os.uptime(). */
@@ -50,15 +58,6 @@ export function appLockPath(options: { app: string; data: string; state: string;
   const key = `${options.app}\n${(options.platform ?? process.platform) === "win32" ? data.toLowerCase() : data}`;
   const name = createHash("sha256").update(key).digest("hex").slice(0, 16);
   return path.join(options.state, "locks", `${name}.lock`);
-}
-
-function processAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
 }
 
 async function readLock(file: string): Promise<AppLockInfo | null> {
@@ -83,18 +82,22 @@ async function unreadableAndOld(file: string): Promise<boolean> {
   }
 }
 
-/** A lock is stale when it was taken before the last boot, or its process is gone. */
-function staleHolder(holder: AppLockInfo, bootTime: number): boolean {
+/**
+ * A lock is stale when it was taken before the last boot, or its process is gone or is no longer the instance that took it (a killed
+ * instance leaves its lock, and the system can give its number to another program).
+ */
+async function judgeHolder(holder: AppLockInfo, bootTime: number, read: ProcessReader): Promise<"stale" | "live" | "unknown"> {
   const startedAt = Date.parse(holder.startedAt);
-  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return true;
-  return holder.pid !== process.pid && !processAlive(holder.pid);
+  if (!Number.isNaN(startedAt) && startedAt < bootTime - BOOT_MARGIN_MS) return "stale";
+  const status = await holderStatus(holder.pid, holder.startedAt, read, holder.program);
+  return status === "gone" ? "stale" : status;
 }
 
 /**
  * Moves a stale lock to a unique name, so that of two instances that both judged it stale only one takes it over.
  * Puts it back when it turns out to be a fresh lock that another instance took in between.
  */
-async function claimStaleLock(file: string, judged: AppLockInfo | null): Promise<"retry" | { holder: AppLockInfo | null }> {
+export async function claimStaleLock(file: string, judged: AppLockInfo | null): Promise<"retry" | { holder: AppLockInfo | null }> {
   const quarantine = `${file}.stale-${process.pid}-${randomBytes(4).toString("hex")}`;
   try {
     await fs.rename(file, quarantine);
@@ -106,13 +109,15 @@ async function claimStaleLock(file: string, judged: AppLockInfo | null): Promise
   const moved = await readLock(quarantine);
   const same = judged === null ? moved === null && (await unreadableAndOld(quarantine)) : moved !== null && sameLock(moved, judged);
   if (!same) {
+    // A fresh lock that another instance took in between goes back. When another lock is there already, this one stays aside.
     try {
       await fs.link(quarantine, file);
+      await fs.rm(quarantine, { force: true });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") await fs.rename(quarantine, file);
     }
   }
-  await fs.rm(quarantine, { force: true });
+  // A stale lock stays under its new name, as the record of what was taken over. Nothing is deleted.
   return same ? "retry" : { holder: moved };
 }
 
@@ -130,8 +135,10 @@ export async function acquireAppLock(options: AppLockOptions): Promise<AppLock> 
     pid: process.pid,
     hostname: os.hostname(),
     startedAt: new Date().toISOString(),
+    program: ownProgramName(),
   };
   const bootTime = options.bootTime ?? Date.now() - os.uptime() * 1000;
+  const read = options.readProcess ?? readSystemProcess;
   let holder: AppLockInfo | null = null;
   for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt++) {
     try {
@@ -154,9 +161,22 @@ export async function acquireAppLock(options: AppLockOptions): Promise<AppLock> 
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       holder = await readLock(file);
-      const stale =
-        holder === null ? await unreadableAndOld(file) : holder.hostname === info.hostname && staleHolder(holder, bootTime);
-      if (!stale) throw new AppLockedError(options.app, info.data, holder);
+      let stale: boolean;
+      let unchecked = false;
+      if (holder === null) {
+        stale = await unreadableAndOld(file);
+      } else if (holder.hostname !== info.hostname) {
+        stale = false;
+      } else {
+        // The process is looked at once, and only when the lock is held: a free lock never starts a lookup.
+        const verdict = await judgeHolder(holder, bootTime, read);
+        stale = verdict === "stale";
+        unchecked = verdict === "unknown";
+      }
+      if (!stale) {
+        // Held. When the system would not say what the process is, the lock is respected and the message says so.
+        throw new AppLockedError(options.app, info.data, holder, unchecked);
+      }
       const claim = await claimStaleLock(file, holder);
       if (claim !== "retry") throw new AppLockedError(options.app, info.data, claim.holder);
     }

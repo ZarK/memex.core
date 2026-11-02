@@ -52,3 +52,5 @@ export type { ElectronPaths } from "./electron.js";
 export { MEMEX_README_TEXT, MEMEX_README_VERSION, writeMemexReadme } from "./readme.js";
 export { DataFolderError, openDataFolder } from "./data.js";
 export type { DataFolderErrorCode, OpenDataFolderOptions } from "./data.js";
+export { holderIsLive, holderStatus, isOwnProgram, ownProgramName, processCanHaveWritten, readSystemProcess } from "./process-info.js";
+export type { HolderStatus, ProcessInfo, ProcessReader } from "./process-info.js";

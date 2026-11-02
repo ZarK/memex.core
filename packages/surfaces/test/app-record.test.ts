@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -162,6 +162,19 @@ describe("app records on disk", () => {
     await fs.mkdir(apps, { recursive: true });
     await fs.writeFile(path.join(apps, "photos.json"), JSON.stringify(stopped));
     await expect(readAppRecord("photos", { apps })).rejects.toThrow(/names the app contacts/);
+  });
+
+  it("finds a record stale when its number went to another program after the record was written", async () => {
+    const child = process.platform === "win32" ? spawn("ping", ["-n", "60", "127.0.0.1"], { stdio: "ignore" }) : spawn("sleep", ["60"], { stdio: "ignore" });
+    try {
+      const tokenFile = path.join(dir, "token");
+      await writeAppRecord({ ...stopped, running: { pid: child.pid!, startedAt: "2020-01-01T00:00:00Z", url: "http://127.0.0.1:9", tokenFile } }, { apps });
+      const found = await discover("contacts", { apps });
+      expect(found.state).toBe("stopped");
+      expect(found.stale).toMatch(/belongs to another program/);
+    } finally {
+      child.kill();
+    }
   });
 
   it("finds a record stale when the process is gone", async () => {

@@ -43,6 +43,7 @@ import {
   type ArchiveIndex,
 } from "../src/index.js";
 import { main } from "../src/cli.js";
+import { ownProgramName } from "../src/process-info.js";
 import { PackBuilder } from "../src/pack.js";
 import { ZipWriter } from "../src/zip.js";
 
@@ -262,7 +263,8 @@ describe("run lock", () => {
       expect(taken).toHaveLength(1);
       expect(refused).toHaveLength(1);
       expect((refused[0] as PromiseRejectedResult).reason).toBeInstanceOf(ArchiveLockedError);
-      expect(await fs.readdir(lockDir)).toEqual([path.basename(file)]);
+      // The stale lock stays aside under its new name: nothing is deleted.
+      expect((await fs.readdir(lockDir)).filter((name) => !name.includes(".stale-"))).toEqual([path.basename(file)]);
       await (taken[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof acquireRunLock>>>).value.release();
     }
   });
@@ -278,8 +280,10 @@ describe("run lock", () => {
     const lock = await acquireRunLock(dir, { lockDir, bootTime });
     await lock.release();
 
+    // This process "started" at the boot, so a lock written five minutes later is its own.
+    const readProcess = async () => ({ name: ownProgramName(), started: bootTime });
     await write("2026-10-23T08:05:00Z");
-    await expect(acquireRunLock(dir, { lockDir, bootTime })).rejects.toBeInstanceOf(ArchiveLockedError);
+    await expect(acquireRunLock(dir, { lockDir, bootTime, readProcess })).rejects.toBeInstanceOf(ArchiveLockedError);
 
     await write("2026-10-23T07:30:00Z", "another-host");
     await expect(acquireRunLock(dir, { lockDir, bootTime })).rejects.toBeInstanceOf(ArchiveLockedError);
