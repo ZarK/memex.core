@@ -205,6 +205,24 @@ describe("ensureService", () => {
     expect((await probe("node", { apps: path.join(root, "apps") })).state).toBe("running");
   });
 
+  it("finds a record stopped when its process number belongs to a process that started after the record was written", async () => {
+    const apps = path.join(root, "apps");
+    fs.mkdirSync(apps, { recursive: true });
+    const record = {
+      format: "memex.app/1",
+      app: "contacts",
+      name: "Contacts",
+      kind: "service",
+      version: "1.0.0",
+      executable: path.join(root, "contacts"),
+      running: { pid: process.pid, startedAt: "2020-01-01T00:00:00Z", url: "http://127.0.0.1:9", tokenFile: path.join(root, "token") },
+    };
+    fs.writeFileSync(path.join(apps, "contacts.json"), JSON.stringify(record));
+    const found = await probe("contacts", { apps });
+    expect(found.state).toBe("stopped");
+    expect(found).toMatchObject({ reason: expect.stringContaining("belongs to another program") });
+  });
+
   it("keeps the calls on a lease at the Node that granted it after a takeover, and moves other calls to the newer copy", async () => {
     const node = await ensureNode(options([copy("4.0.0")]));
     const pid1 = node.launch!.record.running!.pid;

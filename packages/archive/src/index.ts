@@ -47,6 +47,7 @@ export {
   type RunReport,
   type JsonValue,
 } from "./status.js";
+export { processCanHaveWrittenSync } from "./process-info.js";
 export { acquireRunLock, lockPath, ArchiveLockedError, type RunLock, type LockInfo, type LockOptions } from "./lock.js";
 export {
   initArchive,

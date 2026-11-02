@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { isAppId, memexPaths } from "@tjalve/memex-storage";
+import { isAppId, memexPaths, processCanHaveWritten } from "@tjalve/memex-storage";
 import { SurfaceError, readAppRecord, type AppRecord } from "@tjalve/memex-surfaces";
 import { endpointOf, sendRequest, type Endpoint } from "./transport.js";
 
@@ -234,15 +234,6 @@ export async function recordCopy(record: AppRecord | null): Promise<ServiceCopy 
 
 // ---------- probing ----------
 
-function processAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
-
 export type Probe =
   | { state: "running"; record: AppRecord; endpoint: Endpoint; version: string }
   | { state: "draining"; record: AppRecord }
@@ -254,7 +245,9 @@ export async function probe(app: string, options: { apps?: string; timeoutMs?: n
   const record = await readAppRecord(app, { apps: options.apps });
   if (!record) return { state: "stopped", record, reason: "not installed" };
   if (!record.running) return { state: "stopped", record, reason: "running is null" };
-  if (!processAlive(record.running.pid)) return { state: "stopped", record, reason: `the process ${record.running.pid} is gone` };
+  if (!(await processCanHaveWritten(record.running.pid, record.running.startedAt))) {
+    return { state: "stopped", record, reason: `the process ${record.running.pid} is gone, or the number belongs to another program now` };
+  }
   let endpoint: Endpoint;
   try {
     endpoint = await endpointOf(record.running);
@@ -335,7 +328,7 @@ async function staleLock(file: string): Promise<boolean> {
     const stat = await fs.stat(file);
     if (Date.now() - stat.mtimeMs > STALE_LOCK_MS) return true;
     const holder = JSON.parse(await fs.readFile(file, "utf8")) as LockInfo;
-    return holder.hostname === os.hostname() && typeof holder.pid === "number" && !processAlive(holder.pid);
+    return holder.hostname === os.hostname() && typeof holder.pid === "number" && !(await processCanHaveWritten(holder.pid, holder.startedAt));
   } catch {
     return false;
   }

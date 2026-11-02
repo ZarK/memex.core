@@ -267,7 +267,7 @@ describe("import", () => {
     const importer = createImporter(db, { readers: [things] });
     const report = await importer.commit([root]);
     // What a killed commit leaves: the batch is still running, owned by a process that is gone.
-    const { spawnSync } = await import("node:child_process");
+    const { spawn, spawnSync } = await import("node:child_process");
     const gone = spawnSync(process.execPath, ["-e", "process.stdout.write(String(process.pid))"], { encoding: "utf8" });
     db.run("UPDATE import_batch SET state = 'running', finished_at = NULL, totals_json = NULL, owner_pid = ? WHERE id = ?", Number(gone.stdout), report.batchId);
     const batch = importer.batch(report.batchId)!.batch;
@@ -277,9 +277,17 @@ describe("import", () => {
     expect(db.get<{ n: number }>("SELECT count(*) AS n FROM thing")!.n).toBe(0);
     // A batch whose process is alive stays running and is not undone.
     const again = await importer.commit([root], { reread: true });
-    db.run("UPDATE import_batch SET state = 'running', owner_pid = ? WHERE id = ?", process.ppid, again.batchId);
-    expect(() => importer.undo(again.batchId)).toThrow(/still running in process/);
-    expect(importer.batch(again.batchId)!.batch.state).toBe("running");
+    const owner = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: "ignore" });
+    try {
+      db.run("UPDATE import_batch SET state = 'running', owner_pid = ?, started_at = ? WHERE id = ?", owner.pid, new Date(Date.now() + 5000).toISOString(), again.batchId);
+      expect(() => importer.undo(again.batchId)).toThrow(/still running in process/);
+      expect(importer.batch(again.batchId)!.batch.state).toBe("running");
+      // A process that is alive but started after the batch did, got its number from the one that ran it: the batch is stopped.
+      db.run("UPDATE import_batch SET started_at = '2020-01-01T00:00:00.000Z' WHERE id = ?", again.batchId);
+      expect(importer.batch(again.batchId)!.batch.state).toBe("stopped");
+    } finally {
+      owner.kill();
+    }
     db.close();
   });
 

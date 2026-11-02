@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
+import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
+import { readSystemProcess } from "@tjalve/memex-storage";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -253,9 +255,31 @@ describe("the layout writer", () => {
     const m = manifest();
     const staging = path.join(root, ".staging", ...packFolder(m).split("/"));
     await fs.mkdir(staging, { recursive: true });
-    await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: process.ppid, startedAt: "2026-10-26T00:00:00Z", hostname: lockHostname(), program: "study" }));
-    await expect(installPack(m, { root, download: local })).rejects.toMatchObject({ code: "install_busy" });
-    expect(requests).toEqual([]);
+    // The lock records when its own process started, as the system tells it.
+    const other = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: "ignore" });
+    try {
+      const info = await readSystemProcess(other.pid!);
+      const startedAt = info?.started != null ? new Date(info.started).toISOString() : new Date().toISOString();
+      await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: other.pid, startedAt, hostname: lockHostname(), program: "study" }));
+      await expect(installPack(m, { root, download: local })).rejects.toMatchObject({ code: "install_busy" });
+      expect(requests).toEqual([]);
+    } finally {
+      other.kill();
+    }
+  });
+  it("takes over a download lock whose number went to another process that started at another time", async () => {
+    const m = manifest();
+    const staging = path.join(root, ".staging", ...packFolder(m).split("/"));
+    await fs.mkdir(staging, { recursive: true });
+    // A live process, but not the one that wrote the lock: it started long after the date the lock names.
+    const other = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: "ignore" });
+    try {
+      await fs.writeFile(path.join(staging, ".download.lock"), JSON.stringify({ pid: other.pid, startedAt: "2020-01-01T00:00:00Z", hostname: lockHostname(), program: "study" }));
+      await installPack(m, { root, download: local });
+      expect(requests.length).toBeGreaterThan(0);
+    } finally {
+      other.kill();
+    }
   });
   it("keeps entries and keys of packs.json that it does not know", async () => {
     await fs.writeFile(path.join(root, "packs.json"), JSON.stringify({ format: "memex.packs/1", note: "x", packs: { other: { version: "1", digest: "a".repeat(64), folder: "other/1-aaaaaaaa", activatedAt: "2026-10-26T00:00:00Z", future: 1 } } }));

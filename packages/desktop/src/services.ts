@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { compareVersions, isVersion, probe, sendRequest, servicesFolder, SERVICE_MANIFEST_FORMAT, endpointOf } from "@tjalve/memex-node-client";
-import { memexPaths, memexRoot } from "@tjalve/memex-storage";
+import { memexPaths, memexRoot, processCanHaveWrittenSync } from "@tjalve/memex-storage";
 import { isInsideDirectory } from "./home.js";
 
 /**
@@ -373,7 +373,7 @@ export async function withServicesLock<T>(services: string, timeoutMs: number, f
     try {
       const stat = lstatSync(file);
       const holder = JSON.parse(readFileSync(file, "utf8")) as LockInfo;
-      stale = Date.now() - stat.mtimeMs > 10 * 60_000 || (holder.hostname === os.hostname() && typeof holder.pid === "number" && !alive(holder.pid));
+      stale = Date.now() - stat.mtimeMs > 10 * 60_000 || (holder.hostname === os.hostname() && typeof holder.pid === "number" && !processCanHaveWrittenSync(holder.pid, holder.startedAt));
     } catch {
       stale = false;
     }

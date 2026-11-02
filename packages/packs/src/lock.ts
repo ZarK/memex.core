@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PackError } from "./manifest.js";
+import { processCanHaveWritten } from "@tjalve/memex-storage";
 
 /** The lock file of the store: only one program changes the store at a time (contracts/packs.md, Store layout). */
 export const STORE_LOCK = ".lock";
@@ -75,16 +76,6 @@ function isThisComputer(hostname: string): boolean {
   return sameComputer(hostname, lockHostname()) || sameComputer(hostname, os.hostname());
 }
 
-function isAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    // EPERM: the process exists but belongs to another user.
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
-
 /** Reads the holder of the lock: null when there is no lock; a "half written" holder for a lock that is not JSON yet. */
 export async function readStoreLock(root: string): Promise<StoreLockHolder | null> {
   return readLockFile(path.join(root, STORE_LOCK));
@@ -124,8 +115,7 @@ function parseHolder(text: string): StoreLockHolder | null {
 /**
  * True when the lock no longer protects anything: it was written before the last boot, or its process on this
  * computer is gone. A lock from another computer (a store on a shared drive) is never stale here. A lock of a process
- * that runs is held: unlike Memex.Node, this library cannot read the start time of another process without native
- * code, so a process id that the OS gave again counts as the holder until it ends.
+ * that runs is held, unless that process started at another time than the lock says (the number was given again).
  */
 async function isStale(file: string, holder: StoreLockHolder): Promise<boolean> {
   if (holder.pid === -1) return true;
@@ -133,7 +123,10 @@ async function isStale(file: string, holder: StoreLockHolder): Promise<boolean> 
   if (!isThisComputer(holder.hostname)) return false;
   const stat = await fs.stat(file).catch(() => null);
   if (stat !== null && stat.mtimeMs < bootTime()) return true;
-  return !isAlive(holder.pid);
+  // The lock records when its own process started, so a process that started after that got its number from the one that wrote the
+  // lock. Only that side is judged: the lock's time is read from this runtime's clock and the system's start time from the system's,
+  // which differ by a moment, and by more when the clock was stepped. A process that cannot be read, or of another account, is the holder.
+  return !(await processCanHaveWritten(holder.pid, holder.startedAt));
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
