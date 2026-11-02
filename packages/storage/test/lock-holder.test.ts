@@ -161,3 +161,11 @@ describe("the holder of an app lock", () => {
     await second.release();
   });
 });
+
+describe("the process reader", () => {
+  it("is the same file in storage and in archive (archive has no dependencies, so it keeps its own copy)", async () => {
+    const here = await fs.readFile(path.join(import.meta.dirname, "..", "src", "process-info.ts"), "utf8");
+    const there = await fs.readFile(path.join(import.meta.dirname, "..", "..", "archive", "src", "process-info.ts"), "utf8");
+    expect(there.replace(/\r\n/g, "\n")).toBe(here.replace(/\r\n/g, "\n"));
+  });
+});
