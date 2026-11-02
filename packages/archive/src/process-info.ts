@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -39,6 +39,16 @@ export function ownProgramName(): string {
     try {
       const comm = readFileSync("/proc/self/comm", "utf8").trim();
       if (comm) return comm;
+    } catch {
+      // Fall back to the executable.
+    }
+  }
+
+  // Elsewhere that is not Windows (macOS), ps names the process as other readers see it, whatever its title is.
+  if (process.platform !== "win32") {
+    try {
+      const comm = execFileSync("ps", ["-o", "comm=", "-p", String(process.pid)], { timeout: 5_000, encoding: "utf8", env: { ...process.env, LC_ALL: "C" } }).trim();
+      if (comm) return path.basename(comm);
     } catch {
       // Fall back to the executable.
     }
