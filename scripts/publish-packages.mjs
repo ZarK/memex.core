@@ -7,6 +7,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Every public package of this repository, in release order: a package comes after every
 // package of this repository that it depends on (dependencies, peer and dev dependencies).
 // scripts/check-release-manifests.mjs fails when this list and the workspace disagree.
+// A workspace package that is held back is private and is not listed here.
 export const RELEASE_PACKAGES = Object.freeze([
   { key: "memex-sqlite", path: "packages/sqlite", commands: [] },
   { key: "memex-schema", path: "packages/schema", commands: [] },
@@ -20,7 +21,6 @@ export const RELEASE_PACKAGES = Object.freeze([
   { key: "memex-surfaces", path: "packages/surfaces", commands: ["memex-surfaces"] },
   { key: "memex-node-client", path: "packages/node-client", commands: [] },
   { key: "memex-packs", path: "packages/packs", commands: [] },
-  { key: "memex-node-ui", path: "packages/node-ui", commands: [] },
   { key: "memex-user-client", path: "packages/user-client", commands: [] },
   // The main entry imports Electron, a peer dependency; the installed check imports the
   // server and build entries instead.
