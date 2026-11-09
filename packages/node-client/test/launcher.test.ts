@@ -181,10 +181,12 @@ describe("ensureService", () => {
     expect(again.action).toBe("found");
     expect(again.record.running!.pid).toBe(pid1);
 
-    // The older copy holds work, so it drains instead of stopping at once.
+    // The older copy holds work, so it drains instead of stopping at once. The hold must outlast the start of the newer
+    // copy, and a cold program takes seconds to start on a GitHub Windows runner.
+    const holdMs = process.platform === "win32" ? 15_000 : 1500;
     const node = await ensureNode(options([copy("1.0.0")]));
     const holder = await (node as unknown as { send(op: unknown): Promise<unknown> }).send({
-      operation: "hold", method: "POST", path: "/v1/hold?ms=1500", response: "json", status: 200,
+      operation: "hold", method: "POST", path: `/v1/hold?ms=${holdMs}`, response: "json", status: 200,
     });
     expect(holder).toEqual({ held: 1 });
 
@@ -196,7 +198,7 @@ describe("ensureService", () => {
     expect(pid2).not.toBe(pid1);
     expect(newer.record.version).toBe("1.1.0");
     expect(alive(pid1)).toBe(true);
-    await waitFor(() => !alive(pid1));
+    await waitFor(() => !alive(pid1), holdMs + 5000);
 
     // The client follows Node to the newer copy.
     const status = (await node.getStatus()) as unknown as { version: string; pid: number };

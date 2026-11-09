@@ -175,7 +175,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON((github.event_name != 'pull_request' && github.event.repository.private == false) && '["ubuntu-24.04", "windows-2025", "macos-15"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(github.event.repository.private == false && '["ubuntu-24.04", "windows-2025", "macos-15"]' || '["ubuntu-24.04"]') }}
         node: ${{ fromJSON((inputs.stack == 'pnpm' || inputs.stack == 'npm') && inputs.node-versions || '["24"]') }}
     defaults:
       run:
