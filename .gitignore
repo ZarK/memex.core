@@ -12,3 +12,8 @@ packages/desktop/examples/*/proof/
 
 # Manifest backups left by an interrupted release check or stage run
 *.publish-backup
+
+# QUBE: the repository policy (.qube/<tool>/config.json) is committed; checkout settings and run records are not.
+.qube/**
+!.qube/*/
+!.qube/*/config.json

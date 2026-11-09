@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "policy": {
+    "branch": {
+      "baseBranch": "main",
+      "baseRemote": "origin",
+      "requireBaseBranchFreshness": true
+    },
+    "shipping": {
+      "autonomousMode": true,
+      "mergeStrategy": "merge"
+    },
+    "reviews": {
+      "adapter": "local",
+      "mode": "isolated",
+      "profile": "local-focused",
+      "severityThreshold": "high",
+      "promptFragments": {
+        "repository": [
+          "Repository standing rules: Memex.Core is a set of local-first libraries released to npm as @tjalve packages. Tests and proofs use scratch folders only (MEMEX_HOME, MEMEX_ARCHIVE_HOME, MEMEX_APPS_DIR, MEMEX_PHOTOS_LIBRARY and MEMEX_PACKS_DIR point at temporary folders); a change that reads or writes a real data folder is a blocker. Fixtures are synthetic or public, with no personal data, real names, real addresses or real paths of a computer. Model files, packs and secrets are never committed, and nothing is published by hand: releases go only through the publish workflow and npm staged publishing. Code, tests, docs, commit messages and pull request text describe the product, not how the work was planned or done, and carry no credit to an agent or tool. Dependencies use exact versions with intentional lockfile changes and no install scripts."
+        ],
+        "safety": [],
+        "style": [],
+        "adapter": [],
+        "reviewer": [],
+        "commandAddendum": []
+      },
+      "contextSources": {
+        "instructions": [
+          "README.md",
+          "docs/**/*.md"
+        ]
+      },
+      "lanes": [
+        {
+          "id": "code-quality",
+          "required": "always",
+          "match": [],
+          "severityThreshold": "high",
+          "prompt": [],
+          "tools": [],
+          "runner": "local-host",
+          "rereview": "delta",
+          "route": null
+        },
+        {
+          "id": "security",
+          "required": "always",
+          "match": [],
+          "severityThreshold": "high",
+          "prompt": [],
+          "tools": [],
+          "runner": "local-host",
+          "rereview": "delta",
+          "route": null
+        },
+        {
+          "id": "release-ci-supply-chain",
+          "required": "always",
+          "match": [],
+          "severityThreshold": "high",
+          "prompt": [],
+          "tools": [],
+          "runner": "local-command",
+          "command": "node -e \"import(require('url').pathToFileURL(require('path').join(require('os').homedir(),'.qube','memex-checks','memex-checks.mjs')).href).then(m=>m.main(process.argv.slice(1)))\" -- lane",
+          "rereview": "always-rerun",
+          "route": null
+        }
+      ],
+      "agents": [],
+      "localAgents": [],
+      "waitMinutes": 0
+    }
+  }
+}
