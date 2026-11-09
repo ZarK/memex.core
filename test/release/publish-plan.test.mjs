@@ -56,6 +56,19 @@ describe("publish tag resolution", () => {
     }
   });
 
+  it("never stages a held-back package, by set tag or by package tag", async () => {
+    // A package that stays in the workspace but is not released is private, and is not in
+    // the release catalog. Bring it back by removing "private" and listing it again.
+    for (const held of [{ key: "memex-node-ui", packageJson: "packages/node-ui/package.json" }]) {
+      const manifest = JSON.parse(readFileSync(path.join(repoRoot, held.packageJson), "utf8"));
+      assert.equal(manifest.private, true, `${held.packageJson} must be private while it is held back`);
+      assert.ok(!PUBLISH_SET_ORDER.includes(held.key), `${held.key} is in the release catalog`);
+      const plan = await resolvePublishTag(`publish-set-v${setVersion}`, repoRoot);
+      assert.ok(!plan.packages.some(entry => entry.packageName === manifest.name), `${manifest.name} is in the set plan`);
+      await assert.rejects(resolvePublishTag(`publish-${held.key}-v${manifest.version}`, repoRoot), /Unknown package key/);
+    }
+  });
+
   it("maps the emergency single-package tag to one package and its own commands", async () => {
     const version = readVersion("packages/node-client/package.json");
     const plan = await resolvePublishTag(`publish-memex-node-client-v${version}`, repoRoot);

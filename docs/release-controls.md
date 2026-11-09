@@ -59,13 +59,18 @@ after every package of this repository that it depends on:
 10. `@tjalve/memex-surfaces` (memex-storage)
 11. `@tjalve/memex-node-client` (memex-storage, memex-surfaces)
 12. `@tjalve/memex-packs` (memex-node-client, memex-storage)
-13. `@tjalve/memex-node-ui` (memex-node-client)
-14. `@tjalve/memex-user-client` (memex-node-client, memex-sqlite, memex-storage, memex-surfaces)
-15. `@tjalve/memex-desktop` (memex-storage; Electron is a peer dependency)
+13. `@tjalve/memex-user-client` (memex-node-client, memex-sqlite, memex-storage, memex-surfaces)
+14. `@tjalve/memex-desktop` (memex-storage; Electron is a peer dependency)
 
 `pnpm release:check` (also part of the tests) fails when a public workspace package is
 missing from the catalog, when the order is wrong, or when a package lacks its license,
-repository, `files` or `publishConfig`, or has an install script.
+repository, `files` or `publishConfig`, or has an install script. A private workspace
+package is never released.
+
+`@tjalve/memex-node-ui` is held back from the first set (`publish-set-v0.1.1`): its
+`package.json` is private and it is not in the catalog, but it still builds and is tested.
+To release it, remove `"private": true`, put its catalog line back after `memex-packs`, and
+remove it from the held-back test in `test/release/publish-plan.test.mjs`.
 
 In the repository the dependencies between packages are `workspace:*`. When CI stages a
 package, it writes the exact version of each such dependency into the staged

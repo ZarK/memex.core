@@ -1,6 +1,7 @@
 {
   "name": "@tjalve/memex-node-ui",
   "version": "0.1.0",
+  "private": true,
   "description": "Memex.Node settings as framework-free custom elements: packs, backends and routes, and the pack store location.",
   "license": "MIT",
   "author": "Tjalve Aarflot",
