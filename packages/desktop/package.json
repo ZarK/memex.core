@@ -61,7 +61,7 @@
   "devDependencies": {
     "@types/node": "24.13.3",
     "builder-util-runtime": "9.7.0",
-    "electron": "44.7.0",
+    "electron": "44.9.0",
     "typescript": "5.9.2",
     "vitest": "4.1.11"
   },
