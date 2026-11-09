@@ -1,6 +1,6 @@
 {
   "name": "@tjalve/memex-sqlite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Memex SQLite: openDatabase with WAL, a busy timeout and foreign keys, migrations per scope, the change journal, and checkpoints when idle and on exit",
   "license": "MIT",
   "author": "Tjalve Aarflot",
