@@ -461,7 +461,8 @@ describe("electron-updater against a local GitHub-style feed", () => {
 
   function downloaded(dir: string): string[] {
     const pending = path.join(dir, "cache", "memex-example", "pending");
-    return existsSync(pending) ? readdirSync(pending).filter((n) => n.endsWith(".exe")) : [];
+    // The updater downloads into temp-<name> and renames the file after the digest matched; it removes a temp file a moment after it refuses one.
+    return existsSync(pending) ? readdirSync(pending).filter((n) => n.endsWith(".exe") && !n.startsWith("temp-")) : [];
   }
 
   it("answers the update file of every platform the updater can run on", async () => {
