@@ -369,8 +369,8 @@ function githubServer(releases: FakeRelease[]): Promise<{ server: Server; host: 
       const version = release.tag.replace(/^v/, "");
       const installerName = `Memex.Example-${version}-windows-x64.exe`;
       const channel = /-([a-z]+)/.exec(version)?.[1] ?? "latest";
-      // electron-updater asks for latest.yml on Windows and latest-linux.yml on Linux: the test serves the same file for both.
-      if (match[2] === `${channel}.yml` || match[2] === `${channel}-linux.yml`) {
+      // electron-updater asks for latest.yml on Windows, latest-linux.yml on Linux and latest-mac.yml on macOS: the test serves the same file for all three.
+      if (["", "-linux", "-mac"].some((suffix) => match[2] === `${channel}${suffix}.yml`)) {
         const sha512 = release.badDigest ? digest512(Buffer.from("other")) : digest512(release.installer);
         response.setHeader("content-type", "text/yaml");
         response.end(`version: ${version}\nfiles:\n  - url: ${installerName}\n    sha512: ${sha512}\n    size: ${release.installer.length}\npath: ${installerName}\nsha512: ${sha512}\nreleaseDate: '2026-12-15T09:00:00.000Z'\n`);
@@ -463,6 +463,24 @@ describe("electron-updater against a local GitHub-style feed", () => {
     const pending = path.join(dir, "cache", "memex-example", "pending");
     return existsSync(pending) ? readdirSync(pending).filter((n) => n.endsWith(".exe")) : [];
   }
+
+  it("answers the update file of every platform the updater can run on", async () => {
+    const hosted = await githubServer([
+      { tag: "v1.0.0", prerelease: false, installer: Buffer.from("final") },
+      { tag: "v1.1.0-rc.1", prerelease: true, installer: Buffer.from("rc") },
+    ]);
+    server = hosted.server;
+    // electron-updater names the file after the platform it runs on: latest.yml, latest-linux.yml, latest-mac.yml.
+    const files = new Map<string, string>();
+    for (const [tag, channel] of [["v1.0.0", "latest"], ["v1.1.0-rc.1", "rc"]] as const) {
+      for (const suffix of ["", "-linux", "-mac"]) {
+        const response = await fetch(`http://${hosted.host}/${OWNER}/${REPO}/releases/download/${tag}/${channel}${suffix}.yml`);
+        expect(response.status, `${channel}${suffix}.yml`).toBe(200);
+        files.set(`${channel}${suffix}`, await response.text());
+      }
+      expect(files.get(`${channel}-mac`)).toBe(files.get(channel));
+    }
+  });
 
   it("downloads a stable update and checks its digest", async () => {
     const installer = Buffer.from("MZ stable installer 0.1.1");
