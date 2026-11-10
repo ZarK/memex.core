@@ -25,6 +25,9 @@ import {
 import { checkAccountOnly, parseDacl, restrictToAccount } from "../src/account-acl.js";
 import { demoRegistry } from "./fixtures/demo-registry.mjs";
 
+// The time of a record that a live process writes about itself now: the process started before it, as the record rule needs.
+const writtenNow = () => new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+
 const fixtures = path.join(import.meta.dirname, "fixtures", "contracts");
 const fixture = async (name: string) => JSON.parse(await fs.readFile(path.join(fixtures, name), "utf8")) as unknown;
 
@@ -71,7 +74,7 @@ describe("parseAppRecord", () => {
   });
 
   it("refuses a wrong endpoint, an unknown field, and a non-loopback url", () => {
-    const running = { pid: 1, startedAt: "2026-11-10T08:00:00Z" };
+    const running = { pid: 1, startedAt: writtenNow() };
     expect(() => parseAppRecord({ ...stopped, running })).toThrow(/url and tokenFile, or socket/);
     expect(() => parseAppRecord({ ...stopped, running: { ...running, url: "http://127.0.0.1:1", socket: "s" } })).toThrow();
     expect(() => parseAppRecord({ ...stopped, running: { ...running, url: "http://0.0.0.0:80", tokenFile: "t" } })).toThrow(/running.url/);
@@ -82,7 +85,7 @@ describe("parseAppRecord", () => {
   });
 
   it("refuses a socket that is not a local named pipe or an absolute path", () => {
-    const running = { pid: 1, startedAt: "2026-11-10T08:00:00Z" };
+    const running = { pid: 1, startedAt: writtenNow() };
     for (const socket of ["node.sock", "\\\\server\\pipe\\memex-node", "\\\\.\\pipe\\", "\\\\.\\pipe\\a\\b", "http://127.0.0.1:1"]) {
       expect(() => parseAppRecord({ ...stopped, running: { ...running, socket } }), socket).toThrow(/running.socket/);
     }
@@ -179,7 +182,7 @@ describe("app records on disk", () => {
 
   it("finds a record stale when the process is gone", async () => {
     const tokenFile = path.join(dir, "token");
-    await writeAppRecord({ ...stopped, running: { pid: 999_999_999, startedAt: "2026-11-10T08:00:00Z", url: "http://127.0.0.1:9", tokenFile } }, { apps });
+    await writeAppRecord({ ...stopped, running: { pid: 999_999_999, startedAt: writtenNow(), url: "http://127.0.0.1:9", tokenFile } }, { apps });
     const found = await discover("contacts", { apps });
     expect(found.state).toBe("stopped");
     expect(found.stale).toMatch(/999999999 is gone/);
@@ -194,7 +197,7 @@ describe("app records on disk", () => {
     await new Promise<void>((resolve) => other.listen(0, "127.0.0.1", resolve));
     try {
       const url = `http://127.0.0.1:${(other.address() as AddressInfo).port}`;
-      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: "2026-11-10T08:00:00Z", url, tokenFile: "t" } }, { apps });
+      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: writtenNow(), url, tokenFile: "t" } }, { apps });
       const found = await discover("contacts", { apps });
       expect(found).toMatchObject({ state: "stopped", stale: "GET /health names the app photos." });
     } finally {
@@ -207,7 +210,7 @@ describe("app records on disk", () => {
     await new Promise<void>((resolve) => silent.listen(0, "127.0.0.1", resolve));
     try {
       const url = `http://127.0.0.1:${(silent.address() as AddressInfo).port}`;
-      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: "2026-11-10T08:00:00Z", url, tokenFile: "t" } }, { apps });
+      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: writtenNow(), url, tokenFile: "t" } }, { apps });
       expect(await discover("contacts", { apps, timeoutMs: 200 })).toMatchObject({ state: "stopped", unresponsive: true });
     } finally {
       silent.closeAllConnections();
@@ -231,7 +234,7 @@ describe("app records on disk", () => {
       const url = `http://127.0.0.1:${(odd.address() as AddressInfo).port}`;
       const tokenFile = path.join(dir, "token");
       await fs.writeFile(tokenFile, "t".repeat(43));
-      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: "2026-11-10T08:00:00Z", url, tokenFile } }, { apps });
+      await writeAppRecord({ ...stopped, running: { pid: process.pid, startedAt: writtenNow(), url, tokenFile } }, { apps });
       const error = await (await connect("contacts", { apps })).call("contacts.persons.count").catch((e: unknown) => e);
       expect(error).toMatchObject({ code: "internal", status: 500 });
     } finally {
@@ -289,7 +292,7 @@ describe("app records on disk", () => {
   });
 
   it("leaves a record of another process alone on markStopped", async () => {
-    const running = { pid: process.pid + 1, startedAt: "2026-11-10T08:00:00Z", url: "http://127.0.0.1:9", tokenFile: "t" };
+    const running = { pid: process.pid + 1, startedAt: writtenNow(), url: "http://127.0.0.1:9", tokenFile: "t" };
     await writeAppRecord({ ...stopped, running }, { apps });
     await markStopped("contacts", { apps });
     expect((await readAppRecord("contacts", { apps }))?.running).toEqual(running);
