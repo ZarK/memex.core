@@ -72,6 +72,11 @@ jobs:
         shell: bash
         run: node scripts/resolve-publish-tag.mjs "${GITHUB_REF_NAME}" > publish-plan.json
 
+      # Asks npm for a trusted-publishing token for every planned package, before anything is
+      # built or staged. A refusal here leaves nothing staged, so the same run can be re-run.
+      - name: Check the npm trusted publishers
+        run: node scripts/check-trusted-publishers.mjs publish-plan.json
+
       - name: Restore staging checkpoint
         env:
           GH_TOKEN: ${{ github.token }}

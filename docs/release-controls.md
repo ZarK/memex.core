@@ -42,6 +42,11 @@ Configure each package on npmjs.com with this trusted publisher:
 
 Allow only `npm stage publish`. Do not allow direct publishing and do not create an npm token.
 
+npm binds a trusted publisher to the repository's immutable identity at its first successful
+publish, and a new trusted publisher that has no successful publish within 2 days expires.
+A trusted publisher that was used from a repository that no longer exists does not match this
+repository, even under the same name. Check them with `npm trust list <name>`.
+
 ## Packages and their order
 
 The release catalog is `RELEASE_PACKAGES` in `scripts/publish-packages.mjs`. A package comes
@@ -119,6 +124,10 @@ private root `package.json`. It names the set tag `publish-set-v<set version>`.
 
    - resolves the tag to the ordered plan (`scripts/resolve-publish-tag.mjs`), and repeats
      the preparation check, so a set tag pushed by hand on an unprepared commit fails;
+   - asks npm for a trusted-publishing token for every planned package
+     (`scripts/check-trusted-publishers.mjs`) and prints only whether npm accepted each one.
+     A refusal stops the job before anything is built or staged, so after the trusted
+     publishers are corrected on npm, a re-run of the same workflow run starts from nothing;
    - installs with `pnpm install --frozen-lockfile --ignore-scripts`;
    - builds (`pnpm run build`), then runs the typecheck, the tests and the catalog check;
    - packs every package as it will be staged, installs the packed files into a folder

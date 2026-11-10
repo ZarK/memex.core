@@ -43,6 +43,7 @@ describe("publish workflow", () => {
     assert.deepEqual(steps, [
       "node scripts/verify-release-source.mjs",
       "node scripts/resolve-publish-tag.mjs \"${GITHUB_REF_NAME}\" > publish-plan.json",
+      "node scripts/check-trusted-publishers.mjs publish-plan.json",
       "node scripts/restore-stage-receipt.mjs publish-plan.json",
       "node scripts/run-publish-plan.mjs prepare publish-plan.json",
       "node scripts/run-publish-plan.mjs verify publish-plan.json",
