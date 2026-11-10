@@ -10,6 +10,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { checkApp, formatResults, writeAppRecord, type CheckResult } from "../src/index.js";
 import { main } from "../src/check-cli.js";
 
+// The time of a record that a live process writes about itself now: the process started before it, as the record rule needs.
+const writtenNow = () => new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+
 const demo = path.join(import.meta.dirname, "fixtures", "demo-app.mjs");
 let dir: string;
 let apps: string;
@@ -123,7 +126,7 @@ describe("checkApp", () => {
           kind: "app",
           version: "1.0.0",
           executable: path.join(dir, "health"),
-          running: { pid: process.pid, startedAt: "2026-11-10T08:00:00Z", url: `http://127.0.0.1:${(loose.address() as AddressInfo).port}`, tokenFile },
+          running: { pid: process.pid, startedAt: writtenNow(), url: `http://127.0.0.1:${(loose.address() as AddressInfo).port}`, tokenFile },
         },
         { apps: other },
       );
@@ -154,7 +157,7 @@ describe("checkApp", () => {
         version: "1.0.0",
         executable: path.join(dir, "study"),
         mcp: { command: "memex-study", args: ["mcp"] },
-        running: { pid: 999_999_999, startedAt: "2026-11-10T08:00:00Z", url: "http://127.0.0.1:9", tokenFile: path.join(dir, "t") },
+        running: { pid: 999_999_999, startedAt: writtenNow(), url: "http://127.0.0.1:9", tokenFile: path.join(dir, "t") },
       },
       { apps: other },
     );
