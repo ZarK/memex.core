@@ -218,7 +218,7 @@ jobs:
         run: echo "DOTNET_SDK_VERSION=$(node -p 'require("./global.json").sdk.version')" >> "$GITHUB_ENV"
       - name: Set up .NET (exactly the SDK version in global.json)
         if: inputs.stack == 'dotnet'
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         env:
           # A folder of its own, so the SDKs of the runner image cannot roll forward past it.
           DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
